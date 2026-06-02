@@ -1,0 +1,221 @@
+﻿
+using Application.DataTransferObject;
+using Application.Interfaces;
+using AutoMapper;
+using Domain.Entities;
+using Infraestrutura.Interfaces;
+using System;
+using System.Collections.Generic;
+using System.Reflection.Metadata.Ecma335;
+using System.Text;
+
+namespace Application.Services
+{
+    public class EventosServices : IEventoServices
+    {
+        private readonly IUnitOfWork _api;
+        private readonly IMapper _mapper;
+        private readonly IInscricaoServices _ins;
+
+
+        public EventosServices(IUnitOfWork api, IMapper mapper, IInscricaoServices ins)
+        {
+            _api = api;
+            _mapper = mapper;
+            _ins = ins;
+        }
+
+
+       
+        public async Task<ICollection<EventoDTO>> ListarEventos()
+        {    
+            var aux = await _api.EventosRepository.GetAllAsync();
+
+            return _mapper.Map<ICollection<EventoDTO>>(aux);
+
+                
+           
+        }
+
+        public async Task<EventoDTO> GetEventoId(int id)
+        {
+            var aux = await _api.EventosRepository.GetIdAsync(id);
+
+            return _mapper.Map<EventoDTO>(aux);        
+
+        }
+
+
+        public async Task<EventoDTO> GetEventoNomes(string nome)
+        {
+            var aux = await _api.EventosRepository.GetEventoNome(nome);
+
+            return _mapper.Map<EventoDTO>(aux);
+         
+        }
+
+
+
+
+        public async Task<string> CreateEvento(EventoDTO evento)
+        {
+
+            var ev = await _api.EventosRepository.GetAllAsync();
+
+            var normalizado = NormalizeNome(evento.Nome);
+
+            var existe = ev.Any(x => NormalizeNome(x.Nome) == normalizado);
+
+            if(existe)
+            {
+                return null;
+            }
+            else
+            {
+                var map = _mapper.Map<Evento>(evento);
+
+                _api.EventosRepository.Create(map);
+
+                await _api.Commit();
+
+                return $"Evento: '{evento.Nome}' criado.";
+            }                                      
+        }
+
+
+
+        public async Task<string> AtualizarEventoADM(int id, CreateEventoDTO dto) 
+        {
+            var aux = await _api.EventosRepository.GetIdAsync(id); 
+            
+            if(aux != null)
+            {
+                aux.Preco = dto.Preco;
+                aux.QuantidadeDeCamisasDisponiveis = dto.QuantidadeDeCamisasDisponiveis;
+
+
+                _api.EventosRepository.Update(aux);
+
+                await _api.Commit();
+
+                return "Atualização do evento concluída";
+            }
+            else
+            {
+                return $"Evento {id} nao encontrado";
+            }
+        }
+
+
+
+        
+
+        public async Task<EventoDTO> AtualizarEvento(int id, EventoDTO dto)
+        {
+
+            var aux = await _api.EventosRepository.GetIdAsync(id);
+
+            if(aux != null)
+            {
+                aux.Descricao = dto.Descricao;
+                aux.DataInscricao = dto.DataInscricao;
+                aux.DataEvento = dto.DataEvento;
+                aux.Descricao = dto.Descricao;
+                aux.Nome = dto.Nome;
+            }
+            
+
+            _api.EventosRepository.Update(aux);
+
+            await _api.Commit();
+
+            return _mapper.Map<EventoDTO>(aux);
+        }     
+
+
+
+
+        public async Task<EventoDTO> DeletarEventos(int id)
+        {
+            var aux = await _api.EventosRepository.GetIdAsync(id);
+         
+            if(aux != null)
+            {
+                _api.EventosRepository.Delete(aux);
+                await _api.Commit();
+
+                return _mapper.Map<EventoDTO>(aux);
+            }
+            else
+            {
+                return null;
+            }
+                   
+
+        }
+
+
+
+
+        public async Task<InscricaoDTO> Inscrição(InscricaoDTO dto, string nomeEvento)
+        {
+            var aux = await _api.EventosRepository.GetEventoNome(nomeEvento);
+
+
+            var inscricao = _mapper.Map<Inscricao>(dto);
+            
+
+            if(aux.QuantidadeDeCamisasDisponiveis > dto.Camisa)
+            {
+                aux.QuantidadeDeCamisasDisponiveis--;               
+            }
+            else
+            {
+                return null;
+            }
+
+
+            var inscricoes = await _ins.GetAll();
+
+            var existe = inscricoes.Any(x => 
+            x.EventoId ==  dto.EventoId && 
+            x.UsuarioId == dto.UsuarioId);            
+
+            if(existe)
+            {
+                return null;
+            }
+            else
+            {
+                _api.InscricaoRepository.Create(inscricao);
+
+                await _api.Commit();
+
+                return _mapper.Map<InscricaoDTO>(inscricao);
+            }                                 
+        }
+
+
+        public string NormalizeNome(string nome)
+        {                  
+            return string.Join(" ", nome
+                .Trim()
+                .ToLower()
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries));       
+        }
+
+        public async Task<ICollection<Evento>> EventoInscricao()
+        {
+            var aux = await _api.EventosRepository.GetEventoInscricao();
+
+            if(aux == null)
+            {
+                return null;
+            }
+            else
+            {
+                return aux;
+            }
+        }
+    }
+}
