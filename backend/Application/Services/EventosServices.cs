@@ -118,10 +118,12 @@ namespace Application.Services
             if(aux != null)
             {
                 aux.Descricao = dto.Descricao;
+                aux.Imagem = dto.Imagem;
                 aux.DataInscricao = dto.DataInscricao;
                 aux.DataEvento = dto.DataEvento;
                 aux.Descricao = dto.Descricao;
                 aux.Nome = dto.Nome;
+                aux.LocalEvento = dto.LocalEvento;
             }
             
 

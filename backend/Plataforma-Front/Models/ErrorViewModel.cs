@@ -1,4 +1,4 @@
-namespace ApplicationWEB.Models
+namespace Plataforma_Front.Models
 {
     public class ErrorViewModel
     {

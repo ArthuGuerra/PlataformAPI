@@ -77,22 +77,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
     app.ConfigureExceptionMiddlewareExtensions();
 
-    //app.Use(async (context,next) =>
-    //{
-
-    //    await context.Response.WriteAsync("texto antes da requisição      ");
-
-    //    // add codigo antes do request
-
-    //    await next(context);
-
-    //    await context.Response.WriteAsync("      texto depois da requisição");
-
-    //    // add codigo depois do request
-
-
-    //});
-
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("swagger/v1/swagger.json", "APISolution");
@@ -105,12 +89,5 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
-
-//app.Run(async (context) =>
-//{
-//    await context.Response.WriteAsync("Middleware final");
-
-//});
-
 
 app.Run();

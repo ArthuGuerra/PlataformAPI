@@ -21,6 +21,7 @@ namespace Domain.Entities
         public DateTime DataInscricao { get; set; }
         public DateTime DataEvento { get; set; }
         public string? Descricao { get; set; }
+        public string? LocalEvento { get; set; }
         public int QuantidadeDeCamisasDisponiveis { get; set; } = 2000;
 
         public ICollection<Inscricao> Inscricoes { get; set; }

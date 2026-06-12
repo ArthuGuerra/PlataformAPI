@@ -14,8 +14,5 @@ namespace APISolution.MiddlawareException
         {
             return JsonSerializer.Serialize(this);
         }
-
-
-
     }
 }

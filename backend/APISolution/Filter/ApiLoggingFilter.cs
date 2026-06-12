@@ -19,7 +19,7 @@ namespace APISolution.Filter
             _logger.LogInformation($"### Executando em {DateTime.UtcNow.ToLongTimeString()} ");
             _logger.LogInformation($"### Executando em {DateTime.UtcNow.ToLongDateString()}");
 
-            _logger.LogInformation($"MOdelState: {context.ModelState.IsValid}");
+            _logger.LogInformation($"ModelState: {context.ModelState.IsValid}");
 
 
             _logger.LogInformation($"Status code: {context.HttpContext.Response.StatusCode}");

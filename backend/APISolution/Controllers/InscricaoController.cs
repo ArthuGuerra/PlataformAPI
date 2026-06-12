@@ -19,23 +19,17 @@ namespace APISolution.Controllers
         [HttpGet("Inscricoes")]
         public async Task<ActionResult<ICollection<Inscricao>>> Get()
         {
-            try
-            {
-                var aux = await _iss.GetAll();
+            
+            var aux = await _iss.GetAll();
 
-                if(aux != null)
-                {
-                    return Ok(aux);
-                }
-                else
-                {
-                    return NotFound();
-                }
-            }
-            catch(Exception ex)
+            if(aux != null)
             {
-                throw new Exception("falha ao criar uma inscrição");
+                return Ok(aux);
             }
+            else
+            {
+                return NotFound();
+            }                       
         }
     }
 }
