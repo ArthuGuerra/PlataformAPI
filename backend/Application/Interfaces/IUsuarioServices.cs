@@ -8,12 +8,12 @@ namespace Application.Interfaces
 {
     public interface IUsuarioServices
     {
-        public Task<ICollection<UsuarioCorredorDTO>> GetAllUsers();
-        public Task<UsuarioCorredorDTO> GetIdUsers(int id);
-        public Task<UsuarioCorredorDTO> GetNomeUsers(string nome);
-        public Task<UsuarioCorredorDTO> UpdateUsers(int id, UsuarioCorredorDTO dto);
-        public Task<UsuarioCorredorDTO> CreateUsers(UsuarioCorredorDTO dto);
-        public Task<UsuarioCorredorDTO> DeleteUsers(int id);
+        public Task<ICollection<UsuarioPrintDTO>> GetAllUsers();
+        public Task<UsuarioPrintDTO> GetIdUsuario(string id);
+        public Task<UsuarioPrintDTO> GetNomeUsers(string nome);
+        public Task<UsuarioPrintDTO> UpdateUsers(string id, UsuarioPrintDTO dto);
+        public Task<UsuarioPrintDTO> DeleteUsers(string id);
+        public Task<UsuarioPrintDTO> UpdateSenha (string id, UsuarioSenhaDTO dto);
         public string NormalizeNome(string nome);
 
         public Task<ICollection<Usuario>> UsuarioInscricao();

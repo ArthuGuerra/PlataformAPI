@@ -1,4 +1,5 @@
-﻿using Domain.Entities;
+﻿using Application.DataTransferObject;
+using Domain.Entities;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,5 +10,6 @@ namespace Application.Interfaces
     public interface IInscricaoServices
     {
         public Task<ICollection<Inscricao>> GetAll();
+        public Task<InscricaoDTO> Delete(int id);
     }
 }

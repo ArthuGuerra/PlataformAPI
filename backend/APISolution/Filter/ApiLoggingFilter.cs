@@ -19,20 +19,29 @@ namespace APISolution.Filter
             _logger.LogInformation($"### Executando em {DateTime.UtcNow.ToLongTimeString()} ");
             _logger.LogInformation($"### Executando em {DateTime.UtcNow.ToLongDateString()}");
 
-            _logger.LogInformation($"ModelState: {context.ModelState.IsValid}");
+
+            _logger.LogInformation("ModelState: {ModelState}",context.ModelState.IsValid);
+
+            _logger.Log(LogLevel.Information, "texto");
+
+            _logger.LogInformation("Controller: {Controlle} | Action: {Action}", context.RouteData.Values["controller"], context.RouteData.Values["action"]);
+
+            _logger.LogInformation("Rota: {Path}", context.HttpContext.Request.Path);
+
+            _logger.LogInformation("Metodo: {Metodo}", context.HttpContext.Request.Method);
+
+            _logger.LogInformation("Usuario: {Usuario}", context.HttpContext.User.Identity?.Name);
 
 
-            _logger.LogInformation($"Status code: {context.HttpContext.Response.StatusCode}");
+            var inicio = DateTime.UtcNow;
+            var exec = await next();
+            var tempo = DateTime.UtcNow - inicio;
 
+            _logger.LogInformation("Tempo de execução: {tempo} ms", tempo.TotalMilliseconds);
 
             _logger.LogInformation($"Finalizando: {next.Method.Name}");
 
-
-
-            
-            //// DEVO VOLTAR AOS FILTROS DEPOIS 
-
-
+            _logger.LogInformation($"Status code: {exec.HttpContext.Response.StatusCode}");
 
 
         }

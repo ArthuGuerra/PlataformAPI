@@ -3,13 +3,14 @@ using Application.Interfaces;
 using Domain.Entities;
 using Infraestrutura.ContextRepository;
 using Infraestrutura.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
 namespace APISolution.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     public class EventoController : ControllerBase
     {
         private readonly IEventoServices _es;
@@ -22,6 +23,7 @@ namespace APISolution.Controllers
 
 
         [HttpGet("EventosDTO")]
+        [Authorize]
         public async Task<ActionResult<EventoDTO>> GetAll()
         {           
             var aux = await _es.ListarEventos();

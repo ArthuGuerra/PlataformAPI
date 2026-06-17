@@ -10,8 +10,7 @@
     },
     "https": {
       "commandName": "Project",
-      "launchBrowser": true,
-      // "launchUrl":"openapi/v1.json", --- ISSO SE EU QUISESSE abrir o openapi automaticamente
+      "launchBrowser": true,      
       "launchUrl": "swagger",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"

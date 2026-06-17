@@ -24,6 +24,17 @@ namespace Application.Services
         public async Task<ICollection<Inscricao>> GetAll()
         {
             return await _api.InscricaoRepository.GetAllAsync();
-        }      
+        }
+
+        public async Task<InscricaoDTO> Delete(int id)
+        {
+            var aux = await _api.InscricaoRepository.GetIdAsync(id);
+                        
+             _api.InscricaoRepository.Delete(aux);
+
+            await _api.Commit();
+
+            return _mapper.Map<InscricaoDTO>(aux);
+        }
     }
 }

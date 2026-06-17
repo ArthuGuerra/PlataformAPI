@@ -6,7 +6,7 @@ namespace Application.DataTransferObject
 {
     public class InscricaoDTO
     {
-        public int UsuarioId { get; set; }
+        public string? UsuarioId { get; set; }
         public int EventoId { get; set; }
         public int Camisa { get; set; }
         public string? Cor { get; set; }

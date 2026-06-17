@@ -1,4 +1,5 @@
-﻿using Application.Interfaces;
+﻿using Application.DataTransferObject;
+using Application.Interfaces;
 using Domain.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -30,6 +31,12 @@ namespace APISolution.Controllers
             {
                 return NotFound();
             }                       
+        }
+
+        [HttpDelete("Delete/Inscricao")]
+        public async Task<ActionResult<InscricaoDTO>> DeleteIns(int id)
+        {
+            return await _iss.Delete(id);
         }
     }
 }

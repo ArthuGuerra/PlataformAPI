@@ -13,7 +13,8 @@ namespace Application.MapperExtension
         {
             CreateMap<Evento,EventoDTO>().ReverseMap();
             CreateMap<Evento,CreateEventoDTO>().ReverseMap();
-            CreateMap<Usuario,UsuarioCorredorDTO>().ReverseMap();
+            CreateMap<Usuario, UsuarioPrintDTO>().ReverseMap();
+            CreateMap<UsuarioSenhaDTO, UsuarioPrintDTO>().ReverseMap();
             CreateMap<Inscricao,InscricaoDTO>().ReverseMap();
         }
     }

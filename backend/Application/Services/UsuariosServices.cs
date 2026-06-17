@@ -3,9 +3,11 @@ using Application.Interfaces;
 using AutoMapper;
 using Domain.Entities;
 using Infraestrutura.Interfaces;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 
 namespace Application.Services
@@ -14,104 +16,84 @@ namespace Application.Services
     {
         private readonly IUnitOfWork _api;
         private readonly IMapper _mapper;
+        private readonly UserManager<Usuario> _user;
 
-        public UsuariosServices(IUnitOfWork api, IMapper mapper)
+        public UsuariosServices(IUnitOfWork api, IMapper mapper, UserManager<Usuario> user)
         {
             _api = api;
             _mapper = mapper;
+            _user = user;
         }
 
 
-        public async Task<ICollection<UsuarioCorredorDTO>> GetAllUsers()
+        public async Task<ICollection<UsuarioPrintDTO>> GetAllUsers()
         {
             var aux = await _api.UsuariosRepository.GetAllAsync();
 
-            return _mapper.Map<ICollection<UsuarioCorredorDTO>>(aux);
+            return _mapper.Map<ICollection<UsuarioPrintDTO>>(aux);
 
             
         }
 
-        public async Task<UsuarioCorredorDTO> GetNomeUsers(string nome)
+        public async Task<UsuarioPrintDTO> GetNomeUsers(string nome)
         {
-            var aux = await _api.UsuariosRepository.GetNome(nome);
+            var aux = await _user.FindByNameAsync(nome);
 
-            return _mapper.Map<UsuarioCorredorDTO>(aux);
+            return _mapper.Map<UsuarioPrintDTO>(aux);
         }
 
 
         
-        public async Task<UsuarioCorredorDTO> GetIdUsers(int id)
+        public async Task<UsuarioPrintDTO> GetIdUsuario(string id)
         {
-            var aux = await _api.UsuariosRepository.GetIdAsync(id);
+            var aux = await _user.FindByIdAsync(id);
 
-            return _mapper.Map<UsuarioCorredorDTO>(aux);
+            return _mapper.Map<UsuarioPrintDTO>(aux);
         }      
 
 
         
-        public async Task<UsuarioCorredorDTO> CreateUsers(UsuarioCorredorDTO dto)
-        {
-            var ev = await _api.UsuariosRepository.GetAllAsync();
-
-            var norma = NormalizeNome(dto.Nome);
-
-            var existe = ev.Any(x => NormalizeNome(x.Nome) == norma);
-
-            if (existe)
-            {
-                return null;
-            }
-            else
-            {
-                var map = _mapper.Map<Usuario>(dto);
-                _api.UsuariosRepository.Create(map);
-
-                await _api.Commit();
-
-                return _mapper.Map<UsuarioCorredorDTO>(map);
-            }                           
-        }
-
-
-
-        public async Task<UsuarioCorredorDTO> UpdateUsers(int id, UsuarioCorredorDTO dto)
+        public async Task<UsuarioPrintDTO> UpdateUsers(string id, UsuarioPrintDTO dto)
         {
 
-            var aux = await _api.UsuariosRepository.GetIdAsync(id);
+            var aux = await _user.FindByIdAsync(id);
 
             if(aux != null)
             {
-                aux.Nome = dto.Nome;
+                aux.UserName = dto.UserName;
                 aux.Email = dto.Email;                
             }
 
-            _api.UsuariosRepository.Update(aux);
+            var result = await _user.UpdateAsync(aux);
 
-            await _api.Commit();            
-            
-            return _mapper.Map<UsuarioCorredorDTO>(aux);
+            if (!result.Succeeded)
+            {
+                foreach (var erro in result.Errors)
+                {
+                    Debug.WriteLine(erro.Description);
+                }
+                return null;
+            }
+
+            return _mapper.Map<UsuarioPrintDTO>(aux);
         }
 
 
 
-        public async Task<UsuarioCorredorDTO> DeleteUsers(int id)
+        public async Task<UsuarioPrintDTO> DeleteUsers(string id)
         {
-            var aux = await _api.UsuariosRepository.GetIdAsync(id);
+            var aux = await _user.FindByIdAsync(id);
 
             if(aux != null)
             {
-                _api.UsuariosRepository.Delete(aux);
+                await _user.DeleteAsync(aux);
 
-                await _api.Commit();
-
-                return _mapper.Map<UsuarioCorredorDTO>(aux);
+                return _mapper.Map<UsuarioPrintDTO>(aux);
             }
             else
             {
                 return null;
-            }
-
-           
+            }           
         }
 
        
@@ -135,6 +117,28 @@ namespace Application.Services
             else
             {
                 return aux;
+            }
+        }
+
+        public async Task<UsuarioPrintDTO> UpdateSenha(string id,UsuarioSenhaDTO dto)
+        {
+            var user = await _user.FindByIdAsync(id);
+
+            if(user == null)
+            {
+                return null;
+            }
+            else
+            {
+
+                var result = await _user.ChangePasswordAsync(
+                    user,
+                    dto.SenhaAtual,
+                    dto.NewSenha
+                    );
+
+                return _mapper.Map<UsuarioPrintDTO>(dto);
+                
             }
         }
     }

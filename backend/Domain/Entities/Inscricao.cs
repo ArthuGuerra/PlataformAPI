@@ -18,8 +18,9 @@ namespace Domain.Entities
         public char? TamanhoCamisa { get; set; }
 
         public string? Cor { get; set; }
+        public DateTime DataDeInscricaoDousuario { get; set; }
 
-        public int UsuarioId { get; set; }
+        public string? UsuarioId { get; set; }
 
         [JsonIgnore]
         public Usuario? Usuario {  get; set; }

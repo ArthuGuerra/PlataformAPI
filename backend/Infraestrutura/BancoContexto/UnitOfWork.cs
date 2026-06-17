@@ -61,7 +61,7 @@ namespace Infraestrutura.BancoContexto
             {
                 await _api.SaveChangesAsync();
             }
-            catch(Exception ex)
+            catch(Exception)
             {
                 throw new Exception("ERRO AO SALAVR NO BANCO - SaveChances");
             }

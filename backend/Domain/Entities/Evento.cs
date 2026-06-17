@@ -18,7 +18,6 @@ namespace Domain.Entities
         public string? Nome { get; set; }
         public double Preco { get; set; }
         public string? Imagem { get; set; }
-        public DateTime DataInscricao { get; set; }
         public DateTime DataEvento { get; set; }
         public string? Descricao { get; set; }
         public string? LocalEvento { get; set; }

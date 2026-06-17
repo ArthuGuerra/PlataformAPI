@@ -21,7 +21,7 @@ namespace Plataforma_Front.Controllers
         {
             var eventos = await _client.GetFromJsonAsync<List<EventoDTO>>
                 (
-                   "https://localhost:7187/Evento/EventosDTO"
+                   "https://localhost:7187/api/Evento/EventosDTO"
                 );
 
             return View(eventos);

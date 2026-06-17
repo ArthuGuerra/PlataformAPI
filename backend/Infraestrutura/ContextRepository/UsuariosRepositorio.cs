@@ -8,24 +8,25 @@ using System.Text;
 
 namespace Infraestrutura.ContextRepository
 {
-    public class UsuariosRepositorio : Repositorio<Usuario>, IUsuariosRepository
+    public class UsuariosRepositorio : IUsuariosRepository
     {
         private readonly ApiContext _api;
         
-        public UsuariosRepositorio(ApiContext api) : base(api)
+        public UsuariosRepositorio(ApiContext api)
         {
             _api = api;
         }
 
-        public async Task<Usuario> GetNome(string nome)
+        public async Task<ICollection<Usuario>> GetAllAsync()
         {
-            return await _api.Usuario.FirstOrDefaultAsync(x => x.Nome == nome);            
-            
-        }
+            return await _api.Set<Usuario>().AsNoTracking().ToListAsync();
+        }       
 
         public async Task<ICollection<Usuario>> GetUsuarioInscricao()
         {
             return await _api.Usuario.Include(x => x.Inscricoes).ToListAsync();
         }
+
+        
     }
 }

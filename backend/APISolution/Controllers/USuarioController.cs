@@ -9,17 +9,17 @@ namespace APISolution.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class USuarioController : ControllerBase
+    public class UsuarioController : ControllerBase
     {
         private readonly IUsuarioServices _us;
 
-        public USuarioController(IUsuarioServices us)
+        public UsuarioController(IUsuarioServices us)
         {
             _us = us;
         }
 
         [HttpGet("AllUsuarios")]   
-        public async Task<ActionResult<ICollection<UsuarioCorredorDTO>>> GetAll()
+        public async Task<ActionResult<ICollection<UsuarioPrintDTO>>> GetAll()
         {
             
             var aux = await _us.GetAllUsers();
@@ -53,10 +53,10 @@ namespace APISolution.Controllers
 
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<UsuarioCorredorDTO>> GetId(int id)
+        public async Task<ActionResult<UsuarioPrintDTO>> GetId(string id)
         {
           
-            var aux = await _us.GetIdUsers(id);
+            var aux = await _us.GetIdUsuario(id);
 
             if(aux != null)
             {
@@ -70,7 +70,7 @@ namespace APISolution.Controllers
 
 
         [HttpGet("Nome")]
-        public async Task<ActionResult<UsuarioCorredorDTO>> GetNome(string nome)
+        public async Task<ActionResult<UsuarioPrintDTO>> GetNome(string nome)
         {
            
             var aux = await _us.GetNomeUsers(nome);
@@ -87,26 +87,8 @@ namespace APISolution.Controllers
 
 
 
-        [HttpPost("Create")]
-        public async Task<ActionResult<UsuarioCorredorDTO>> CreateUser(UsuarioCorredorDTO dto)
-        {
-           
-            var aux = await _us.CreateUsers(dto);
-
-            if(aux != null)
-            {
-                return Created();
-            }
-            else
-            {
-                return BadRequest($"O evento: '{_us.NormalizeNome(dto.Nome)}' já existe");
-            }                        
-        }
-
-
-
         [HttpPatch("Update")]
-        public async Task<ActionResult<UsuarioCorredorDTO>> UpdateUser(int id, UsuarioCorredorDTO dto)
+        public async Task<ActionResult<UsuarioPrintDTO>> UpdateUser(string id, UsuarioPrintDTO dto)
         {
             
             var aux = await _us.UpdateUsers(id, dto);
@@ -123,7 +105,7 @@ namespace APISolution.Controllers
 
 
         [HttpDelete("Delete")]
-        public async Task<ActionResult<UsuarioCorredorDTO>> DeleteUser(int id)
+        public async Task<ActionResult<UsuarioPrintDTO>> DeleteUser(string id)
         {
             
             var aux = await _us.DeleteUsers(id);

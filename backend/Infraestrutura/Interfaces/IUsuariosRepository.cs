@@ -6,10 +6,9 @@ using System.Text;
 
 namespace Infraestrutura.Interfaces
 {
-    public interface IUsuariosRepository : IRepository<Usuario>
+    public interface IUsuariosRepository
     {
-        public Task<Usuario> GetNome(string nome);
-
         public Task<ICollection<Usuario>> GetUsuarioInscricao();
+        public Task<ICollection<Usuario>> GetAllAsync();
     }
 }

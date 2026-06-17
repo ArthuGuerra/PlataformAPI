@@ -119,7 +119,6 @@ namespace Application.Services
             {
                 aux.Descricao = dto.Descricao;
                 aux.Imagem = dto.Imagem;
-                aux.DataInscricao = dto.DataInscricao;
                 aux.DataEvento = dto.DataEvento;
                 aux.Descricao = dto.Descricao;
                 aux.Nome = dto.Nome;
@@ -189,6 +188,8 @@ namespace Application.Services
             }
             else
             {
+                inscricao.DataDeInscricaoDousuario = DateTime.UtcNow;
+
                 _api.InscricaoRepository.Create(inscricao);
 
                 await _api.Commit();
