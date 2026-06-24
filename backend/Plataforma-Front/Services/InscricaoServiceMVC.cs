@@ -1,5 +1,7 @@
 ﻿using Application.DataTransferObject;
+using Domain.Entities;
 using Plataforma_Front.Interfaces;
+using Plataforma_Front.ViewModels;
 using System.Text.Json;
 
 namespace Plataforma_Front.Services
@@ -19,7 +21,7 @@ namespace Plataforma_Front.Services
             _client = client;
             _options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
         }
-
+    
 
         public async Task<IEnumerable<InscricaoDTO>> ShowMyIncricoes()
         {
@@ -39,6 +41,20 @@ namespace Plataforma_Front.Services
                 }
             }
             return _inscricoesDTO!;
+        }
+
+
+        public async Task<bool> DeleteMyIncricao(int id)
+        {
+            var cli = _client.CreateClient("APISolution");
+
+            var url = apiEndpoint + $"DeleteInscricao?id={id}";
+
+            //api/v1/Inscricao/DeleteInscricao?id=4
+
+            var response = await cli.DeleteAsync(url);
+
+            return response.IsSuccessStatusCode;
         }
     }
 }

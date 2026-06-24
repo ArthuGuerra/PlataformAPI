@@ -17,11 +17,30 @@ namespace Plataforma_Front.Controllers
             _ins = ins;
         }
 
+        [HttpGet]
         public async Task<IActionResult> Index()
         {
-            var aux = await _ins.ShowMyIncricoes();          
+            var aux = await _ins.ShowMyIncricoes();
+            
+            if(aux == null)
+            {
+                return View("Error");
+            }
 
             return View(aux);
+        }
+
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteInscricao(int id)
+        {
+            var aux = await _ins.DeleteMyIncricao(id);
+
+            if(aux == null)
+            {
+                return View("Error");
+            }
+            return RedirectToAction("Index");
         }
     }
 }

@@ -48,7 +48,7 @@ namespace Plataforma_Front.Controllers
             if(evento == null)
             {
                 ModelState.AddModelError("", "Evento não encontrado");
-                return View("GetNome",new EventoInscricaoViewModel());
+                return View("Error",new EventoInscricaoViewModel());
             }
             var vm = new EventoInscricaoViewModel
             {
@@ -79,7 +79,7 @@ namespace Plataforma_Front.Controllers
 
             await _evento.FazerInscricaoService(dto);
 
-            return RedirectToAction("Index");
+            return RedirectToAction("Index","Inscricao");
         }
 
 

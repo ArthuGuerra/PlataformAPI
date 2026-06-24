@@ -21,7 +21,7 @@ namespace APISolution.Controllers
         }
 
         [HttpGet("Inscricoes")]
-        //[Authorize(Policy = "AdminOnly")]
+        //[Authorize(Policy = "User")]
         public async Task<ActionResult<ICollection<InscricaoDTO>>> Get()
         {
             
@@ -38,7 +38,7 @@ namespace APISolution.Controllers
         }
 
         [HttpDelete("DeleteInscricao")]
-        [Authorize(Policy = "AdminOnly")]
+        //[Authorize(Policy = "User")]
         public async Task<ActionResult<InscricaoDTO>> DeleteIns(int id)
         {
             return await _iss.Delete(id);
