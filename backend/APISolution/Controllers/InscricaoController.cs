@@ -1,12 +1,15 @@
 ﻿using Application.DataTransferObject;
 using Application.Interfaces;
+using Asp.Versioning;
 using Domain.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace APISolution.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/v{version:apiVersion}/[controller]")]
+    [ApiVersion("1.0")]
     [ApiController]
     public class InscricaoController : ControllerBase
     {
@@ -18,7 +21,8 @@ namespace APISolution.Controllers
         }
 
         [HttpGet("Inscricoes")]
-        public async Task<ActionResult<ICollection<Inscricao>>> Get()
+        //[Authorize(Policy = "AdminOnly")]
+        public async Task<ActionResult<ICollection<InscricaoDTO>>> Get()
         {
             
             var aux = await _iss.GetAll();
@@ -33,7 +37,8 @@ namespace APISolution.Controllers
             }                       
         }
 
-        [HttpDelete("Delete/Inscricao")]
+        [HttpDelete("DeleteInscricao")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult<InscricaoDTO>> DeleteIns(int id)
         {
             return await _iss.Delete(id);

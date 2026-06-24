@@ -1,0 +1,86 @@
+﻿@using Plataforma_Front.ViewModels;
+
+@model EventoInscricaoViewModel
+
+
+
+
+<h2>Procurar Evento</h2>
+<hr />
+<hr />
+
+
+
+<form asp-action="ProcurarNome" method="get">
+
+    <div class="input-group mb-3">
+        <input type="text"
+               class="form-control"
+               placeholder="Nome do Evento" 
+               name="nome"/>
+               
+        <button type="submit" class="btn btn-primary">
+            Buscar
+        </button>
+    </div>
+
+</form>
+
+
+
+@if(Model != null)
+{
+
+    <div class="text-center">
+        <p>
+            <img src="@Model.Evento.Imagem"
+                 class="d-block w-100 img-fluid"
+                 alt="@Model.Evento.Nome">
+        </p>
+
+        <hr />
+        <hr />
+
+        <p>
+            <strong><h2>@Model.Evento.Nome</h2></strong>
+           
+        </p>
+
+        <p>
+            <strong>Descrição:</strong>
+            @Model.Evento.Descricao
+        </p>
+        <p>
+            <strong>Local:</strong>
+            @Model.Evento.LocalEvento
+        </p>
+        <p>
+            <strong>Data do evento:</strong>
+            @Model.Evento.DataEvento.ToString("dd/MM/yyyy")
+        </p>
+
+    </div>
+            <form asp-action="FazerInscricaoPOST" method="post" class="text-center">
+
+            <p>
+                <button class="btn btn-primary"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#Collapse_@Model.Evento.Id" aria-expanded="false" aria-controls="collapseWidthExample">
+                    Fazer Inscrição
+                </button>
+            </p>
+            <div class="d-flex justify-content-center" style="min-height: 120px;">
+                <div class="collapse collapse-horizontal" id="Collapse_@Model.Evento.Id">
+                    <div class="card card-body" style="width: 300px;">
+                        <partial name="_PartialInscricao" model="Model" />
+                    </div>
+                </div>
+            </div>
+        </form>
+
+
+}
+
+
+

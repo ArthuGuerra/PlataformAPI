@@ -20,6 +20,11 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using System.Security.Claims;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
+using APISolution.MyRateLimit;
+using Asp.Versioning;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -31,6 +36,66 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddControllers().AddJsonOptions(options => options.JsonSerializerOptions.ReferenceHandler=ReferenceHandler.IgnoreCycles);
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 
+
+
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("ApiPolicy", policy =>
+    {
+        policy.WithOrigins(
+            "https://localhost:7214",
+            "https://meusite.com",
+            "https://apirequest.io") 
+        .AllowAnyHeader()
+        .AllowAnyMethod();
+    });
+});
+
+
+
+builder.Services.AddApiVersioning(v =>
+{
+    v.DefaultApiVersion = new ApiVersion(1, 0);
+    v.AssumeDefaultVersionWhenUnspecified = true;
+    v.ReportApiVersions = true;
+    v.ApiVersionReader = ApiVersionReader.Combine(
+        new UrlSegmentApiVersionReader());
+
+}).AddApiExplorer(options =>
+{
+    options.GroupNameFormat = "'v'V";
+    options.SubstituteApiVersionInUrl = true;
+});
+
+
+
+
+
+
+
+var myOptions = new MyRateLimitOptions();
+
+builder.Configuration.GetSection(MyRateLimitOptions.MyRateLimit).Bind(myOptions);
+
+
+
+// rate limite global
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpcontext => RateLimitPartition.GetFixedWindowLimiter(
+                                        partitionKey: httpcontext.User.Identity?.Name ??
+                                        httpcontext.Request.Headers.Host.ToString(),
+                    factory: partion => new FixedWindowRateLimiterOptions
+                    {
+                        AutoReplenishment = myOptions.AutoReplenishment,
+                        PermitLimit = myOptions.PermitLimit,
+                        QueueLimit = myOptions.QueueLimit,
+                        Window = TimeSpan.FromSeconds(myOptions.Window)
+                    }));
+});
 
 
 
@@ -82,16 +147,13 @@ builder.Services.AddControllers(options =>
 
 
 
-
-
 Log.Logger = new LoggerConfiguration().WriteTo.File("C:\\Logs\\log.txt", rollingInterval: RollingInterval.Day).CreateLogger();
 
+builder.Host.UseSerilog();
 
 
 
 
-
-builder.Services.AddAuthorization();
 
 var secretKey = builder.Configuration["JWT:SecretKey"] ?? throw new ArgumentException("Invalid secret key!!");
 
@@ -122,6 +184,14 @@ builder.Services.AddAuthentication(options =>
 
 
 
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin", "SuperAdmin"));
+    options.AddPolicy("Super", policy => policy.RequireRole("SuperAdmin").RequireClaim(ClaimTypes.Name,"ArthurGuerra","AishaGerage"));
+    options.AddPolicy("User", policy =>
+    policy.RequireRole("Usuario", "Admin", "SuperAdmin"));
+});
+
 
 
 
@@ -135,7 +205,28 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "ApiSolution", Version = "v1" });
+    //c.SwaggerDoc("v1", new OpenApiInfo { Title = "ApiSolution", Version = "v1" });
+
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Version = "v1",
+        Title = "APISolution",
+        Description = "Api para plataforma de corrida e para os orgãos da ADRI, APCI e LDIF",
+        TermsOfService = new Uri("https://www.youtube.com/@Dev-Guerra"),
+        Contact = new OpenApiContact
+        {
+            Name = "Arthur Guerra & Aisha Gerage",
+            Email = "agtech@gmail.com",
+            Url = new Uri("https://www.youtube.com/@Dev-Guerra")
+        },
+        License = new OpenApiLicense
+        {
+            Name = "Usar sobre LICX",
+            Url = new Uri("https://www.youtube.com/@Dev-Guerra"),
+        }
+    });
+
+
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
     {
@@ -185,8 +276,13 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 
-//app.UseAuthentication();
+app.UseRouting();
+app.UseCors("ApiPolicy");
+app.UseRateLimiter();
+
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

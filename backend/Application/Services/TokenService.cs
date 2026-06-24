@@ -27,7 +27,7 @@ namespace Application.Services
             {
                 Subject = new ClaimsIdentity(claims),
 
-                Expires = DateTime.UtcNow.AddMinutes(_config.GetSection("JWT").GetValue<double>("TokenValidityInMinutes")),
+                Expires = DateTime.UtcNow.AddHours(_config.GetSection("JWT").GetValue<double>("TokenValidityInHours")),
 
                 Audience = _config.GetSection("JWT").GetValue<string>("ValidAudience"),
 

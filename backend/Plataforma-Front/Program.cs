@@ -1,11 +1,21 @@
 using Microsoft.Extensions.DependencyInjection;
+using Plataforma_Front.Interfaces;
+using Plataforma_Front.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-builder.Services.AddHttpClient();
+builder.Services.AddHttpClient("APISolution", a =>
+{
+    a.BaseAddress = new Uri(builder.Configuration["ServiceUri:APISolution"]!);
+});
+
+
+
+builder.Services.AddScoped<IEventosServicesMVC, EventosServicesMVC>();
+builder.Services.AddScoped<IInscricaoServiceMVC, InscricaoServiceMVC>();
 
 
 

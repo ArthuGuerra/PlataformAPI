@@ -9,6 +9,7 @@ namespace Application.DataTransferObject
     public class EventoDTO
     {
         
+        public int Id { get; set; }
         public string? Nome { get; set; }
         public string? Imagem { get; set; }
         public DateTime DataEvento { get; set; }

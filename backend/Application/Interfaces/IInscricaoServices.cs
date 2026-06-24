@@ -9,7 +9,7 @@ namespace Application.Interfaces
 {
     public interface IInscricaoServices
     {
-        public Task<ICollection<Inscricao>> GetAll();
+        public Task<ICollection<InscricaoDTO>> GetAll();
         public Task<InscricaoDTO> Delete(int id);
     }
 }

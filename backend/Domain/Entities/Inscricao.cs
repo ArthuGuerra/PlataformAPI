@@ -21,6 +21,7 @@ namespace Domain.Entities
         public DateTime DataDeInscricaoDousuario { get; set; }
 
         public string? UsuarioId { get; set; }
+        public string? NomeEvento { get; set; }
 
         [JsonIgnore]
         public Usuario? Usuario {  get; set; }

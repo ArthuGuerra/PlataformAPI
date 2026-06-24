@@ -1,16 +1,19 @@
 using Application.DataTransferObject;
 using Application.Interfaces;
+using Asp.Versioning;
 using Domain.Entities;
 using Infraestrutura.ContextRepository;
 using Infraestrutura.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace APISolution.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/v{version:apiVersion}/[controller]")]
+    [ApiVersion("1.0")]
     public class EventoController : ControllerBase
     {
         private readonly IEventoServices _es;
@@ -23,7 +26,6 @@ namespace APISolution.Controllers
 
 
         [HttpGet("EventosDTO")]
-        [Authorize]
         public async Task<ActionResult<EventoDTO>> GetAll()
         {           
             var aux = await _es.ListarEventos();
@@ -75,6 +77,7 @@ namespace APISolution.Controllers
 
 
         [HttpPost("CreateEvento")]
+        [Authorize(Policy = "User")]
         public async Task<ActionResult<EventoDTO>> CreateEventos(EventoDTO evento)
         {
             
@@ -92,6 +95,7 @@ namespace APISolution.Controllers
 
 
         [HttpPatch("UpdateADM")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult<EventoDTO>> UpdateADM(int id, CreateEventoDTO dto)
         {
            
@@ -109,6 +113,7 @@ namespace APISolution.Controllers
 
 
         [HttpPatch("Update")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult<EventoDTO>> UpdateEvento(int id, EventoDTO dto)
         {
             
@@ -127,6 +132,7 @@ namespace APISolution.Controllers
 
 
         [HttpDelete("Delete")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult<EventoDTO>> DeleteEvento(int id)
         {  
             
@@ -145,10 +151,11 @@ namespace APISolution.Controllers
 
 
         [HttpPatch("Inscricao")]
-        public async Task<ActionResult<EventoDTO>> FazerInscricao(InscricaoDTO dto, string nome)
+        [Authorize(Policy = "User")]
+        public async Task<ActionResult<EventoDTO>> FazerInscricao(InscricaoDTO dto)
         {
            
-            var aux = await _es.Inscrição(dto,nome);
+            var aux = await _es.Inscrição(dto);
 
             if (aux != null)
             {
@@ -162,6 +169,7 @@ namespace APISolution.Controllers
 
 
         [HttpGet("EventosInscricoes")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult<ICollection<Evento>>> EventoInscricoes()
         {
            

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
@@ -33,7 +34,7 @@ namespace APISolution.Controllers
             _logger = logger;
         }
 
-
+        [Authorize(Policy = "Super")]
         [HttpPost("CreateRole")]
         public async Task<IActionResult> CreateRole(string roleName)
         {
@@ -58,7 +59,7 @@ namespace APISolution.Controllers
         }
 
 
-
+        [Authorize(Policy = "Super")]
         [HttpPost("AddUserToRole")]
         public async Task<IActionResult> AdduserRole(string email, string roleName)
         {
@@ -110,11 +111,11 @@ namespace APISolution.Controllers
 
                 var refreshToken = _token.GenerateRefreshToken();
 
-                _ = int.TryParse(_config["JWT:RefreshTokenValidityInMinutes"], out int refreshTokenValidityInHours);
+                _ = int.TryParse(_config["JWT:RefreshTokenValidityInHours"], out int refreshTokenValidityInHours);
 
                 user.RefreshToken = refreshToken;
 
-                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddMinutes(refreshTokenValidityInHours);
+                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddHours(refreshTokenValidityInHours);
 
                 await _user.UpdateAsync(user);
 
@@ -136,15 +137,20 @@ namespace APISolution.Controllers
 
             var userExist = await _userServices.GetAllUsers();
 
-            var norma = _userServices.NormalizeNome(model.Username);
-            var email = _userServices.NormalizeNome(model.Email);
 
-            var existe = userExist.Any(x => _userServices.NormalizeNome(x.UserName) == norma);
-            var existeEmail = userExist.Any(x => _userServices.NormalizeNome(x.Email) == email);
+            var norma = _userServices.NormalizeNome(model.Username!);
+            var email = _userServices.NormalizeNome(model.Email!);
 
-            if (existe || existeEmail)
+            var existe = userExist.Any(x => _userServices.NormalizeNome(x.UserName!) == norma);
+
+            var existeEmail = userExist.Any(x => _userServices.NormalizeNome(x.Email!) == email);
+
+            var existeCPF = userExist.Any(x => _userServices.NormalizeNome(x.CPF!) == model.CPF);
+
+
+            if (existe || existeEmail || existeCPF)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError);
+                return BadRequest("Usuario, Email ou CPF existente!");
             }
             else
             {
@@ -153,6 +159,8 @@ namespace APISolution.Controllers
                     Email = model.Email,
                     SecurityStamp = Guid.NewGuid().ToString(),
                     UserName = model.Username,
+                    CPF = model.CPF,
+                    PhoneNumber = model.Telefone,                 
                 };
 
                 var result = await _user.CreateAsync(user, model.Password!);
@@ -214,8 +222,9 @@ namespace APISolution.Controllers
             });
         }
 
-        [Authorize]
+ 
         [HttpPost("revoke/{username}")]
+        [Authorize(Policy = "Super")]
         public async Task<IActionResult> Revoke(string username)
         {
             var user = await _user.FindByNameAsync(username);
@@ -229,6 +238,39 @@ namespace APISolution.Controllers
             return NoContent();
         }
 
-       
+
+        [HttpGet("ShowUsers")]
+        [Authorize(Policy = "Super")]
+        public async Task<ActionResult<ICollection<Usuario>>> ShowUsers()
+        {
+            var aux = await _user.Users.ToListAsync();
+
+            if(aux == null)
+            {
+                return NotFound();
+            }
+            else
+            {
+                return aux;
+            }
+        }
+
+
+        [HttpGet("ShowRoles")]
+        [Authorize(Policy = "Super")]
+        public async Task<ActionResult<ICollection<IdentityRole>>> ShowRoles()
+        {
+            var aux = await _role.Roles.ToListAsync();
+
+            if (aux == null)
+            {
+                return NotFound();
+            }
+            else
+            {
+                return aux;
+            }
+        }
+
     }
 }

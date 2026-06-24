@@ -1,0 +1,34 @@
+﻿@using Plataforma_Front.ViewModels;
+@using System.Security.Claims;
+
+@model EventoInscricaoViewModel
+
+
+<div class="text-center">
+
+    
+    <h4>Nome do Evento: @Model?.Evento?.Nome</h4>
+
+    <form asp-action="FazerInscricaoPOST" method="post">
+
+        <input type="hidden" asp-for="Evento.Id" />
+
+
+        <div class="input-group mb-2">
+            <input asp-for="Inscricao.TamanhoCamisa" class="form-control" placeholder="Tamanho da camisa ( P,M,G )" />
+        </div>
+
+        <div class="input-group mb-2">
+            <input asp-for="Inscricao.Cor" class="form-control" placeholder="Cor" />
+        </div>
+
+        <div class="input-group mb-2">
+            <input asp-for="Inscricao.Camisa" class="form-control" placeholder="Quantidade>" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            Enviar
+        </button>
+
+    </form>
+</div>

@@ -2,107 +2,89 @@
 using AspNetCoreGeneratedDocument;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Plataforma_Front.Interfaces;
+using Plataforma_Front.ViewModels;
+using System.Security.Claims;
 
 namespace Plataforma_Front.Controllers
 {
     public class EventoController : Controller
     {
+        private readonly IEventosServicesMVC _evento;
 
-        private readonly HttpClient _client;
-
-        public EventoController(IHttpClientFactory client)
+        public EventoController(IEventosServicesMVC evento)
         {
-            _client = client.CreateClient();
+            _evento = evento;
         }
 
 
-        // GET: EventoController
+        [HttpGet]
         public async Task<ActionResult> Index()
         {
-            var eventos = await _client.GetFromJsonAsync<List<EventoDTO>>
-                (
-                   "https://localhost:7187/api/Evento/EventosDTO"
-                );
+            var eventos = await _evento.GetEventos();
 
-            return View(eventos);
-        }
-
-        // GET: EventoController/Details/5
-
-        public async Task<ActionResult> GetNome(string nome)
-        {
-            var evento = await _client.GetFromJsonAsync<EventoDTO>
-             (
-                 $"https://localhost:7187/Evento/GetNome?nome={nome}"
-             );
-            return View(evento);
-        }
-
-        // GET: EventoController/Create
-        public async Task<ActionResult> FazerInscricao(InscricaoDTO dto,string nome)
-        {
-            var evento = await _client.GetFromJsonAsync<InscricaoDTO>
-                (
-                    $"https://localhost:7187/Evento/Inscricao?nome={nome}"
-                );
-            return View(evento);
-        }
-
-        // POST: EventoController/Create
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
-        {
-            try
+            if (eventos == null)
             {
-                return RedirectToAction(nameof(Index));
+                return View("Error");
             }
-            catch
+            else
             {
-                return View();
+                return View(eventos);
             }
         }
 
-        // GET: EventoController/Edit/5
-        public ActionResult Edit(int id)
-        {
+
+        [HttpGet]
+        public async Task<ActionResult> GetNome()
+        {           
             return View();
         }
 
-        // POST: EventoController/Edit/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
-        {
-            try
+
+        [HttpGet]
+        public async Task<ActionResult> ProcurarNome(string nome)
+        {            
+                var evento = await _evento.GetEventoNome(nome);
+            if(evento == null)
             {
-                return RedirectToAction(nameof(Index));
+                ModelState.AddModelError("", "Evento não encontrado");
+                return View("GetNome",new EventoInscricaoViewModel());
             }
-            catch
+            var vm = new EventoInscricaoViewModel
             {
-                return View();
-            }
+                Evento = evento,
+                Inscricao = new InscricaoDTO()
+            };
+
+                return View("GetNome", vm);
         }
 
-        // GET: EventoController/Delete/5
-        public ActionResult Delete(int id)
+        
+
+        [HttpPost]
+        public async Task<IActionResult> FazerInscricaoPOST(EventoInscricaoViewModel model)
         {
-            return View();
+            var claim = User.Claims.ToList();
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        
+
+            var dto = new InscricaoDTO 
+            {
+                UsuarioId = userId,
+                EventoId = model.Evento.Id,
+                Camisa = model.Inscricao.Camisa,
+                Cor = model.Inscricao.Cor,
+                TamanhoCamisa = model.Inscricao.TamanhoCamisa
+            };
+
+            await _evento.FazerInscricaoService(dto);
+
+            return RedirectToAction("Index");
         }
 
-        // POST: EventoController/Delete/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
-        {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
-        }
+
+
+
     }
 }
+

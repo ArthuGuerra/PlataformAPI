@@ -16,5 +16,7 @@ namespace Application.DataTransferObject.IdentityDTO
 
         [Required(ErrorMessage = " Password is required")]
         public string? Password { get; set; }
+        public string? Telefone { get; set; }
+        public string? CPF { get; set; }
     }
 }

@@ -15,7 +15,7 @@ namespace Application.Interfaces
         public Task<EventoDTO> DeletarEventos(int id);
         public Task<EventoDTO> GetEventoId(int id);
         public Task<EventoDTO> GetEventoNomes(string nome);
-        public Task<InscricaoDTO> Inscrição(InscricaoDTO dto, string nomeEvento);
+        public Task<InscricaoDTO> Inscrição(InscricaoDTO dto);
 
         public Task<ICollection<Evento>> EventoInscricao();
 

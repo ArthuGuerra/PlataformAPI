@@ -28,29 +28,22 @@ namespace Infraestrutura.ContextRepository
             return aux;
 
             // se tiver mts registros devo adicionar um limite de consulta. mas.. e se eu quiser mais do q o limite ? (:
-
-
         }
 
         public async Task<T> GetIdAsync(int id)
         {
 
             var aux = await _api.Set<T>().FindAsync(id);
-
             return aux;
-
         }
-
 
 
         public T Create(T entity)
         {
+
             _api.Set<T>().Add(entity);
-
-            return entity;         
-           
+            return entity;                    
         }
-
 
         public T Update(T entity)
         {
@@ -59,16 +52,13 @@ namespace Infraestrutura.ContextRepository
             _api.Set<T>().Update(entity);
 
             return entity;
-
         }
-
 
         public T Delete(T entity)
         {
             _api.Set<T>().Remove(entity);
 
             return entity;
-        }
-        
+        }        
     }
 }

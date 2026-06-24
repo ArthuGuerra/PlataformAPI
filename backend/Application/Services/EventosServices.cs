@@ -4,6 +4,7 @@ using Application.Interfaces;
 using AutoMapper;
 using Domain.Entities;
 using Infraestrutura.Interfaces;
+using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
 using System.Reflection.Metadata.Ecma335;
@@ -22,7 +23,7 @@ namespace Application.Services
         {
             _api = api;
             _mapper = mapper;
-            _ins = ins;
+            _ins = ins;  
         }
 
 
@@ -32,10 +33,9 @@ namespace Application.Services
             var aux = await _api.EventosRepository.GetAllAsync();
 
             return _mapper.Map<ICollection<EventoDTO>>(aux);
-
-                
-           
+                           
         }
+
 
         public async Task<EventoDTO> GetEventoId(int id)
         {
@@ -53,8 +53,6 @@ namespace Application.Services
             return _mapper.Map<EventoDTO>(aux);
          
         }
-
-
 
 
         public async Task<string> CreateEvento(EventoDTO evento)
@@ -158,29 +156,27 @@ namespace Application.Services
 
 
 
-        public async Task<InscricaoDTO> Inscrição(InscricaoDTO dto, string nomeEvento)
+        public async Task<InscricaoDTO> Inscrição(InscricaoDTO dto)
         {
-            var aux = await _api.EventosRepository.GetEventoNome(nomeEvento);
+            var aux = await _api.EventosRepository.GetEventoNome(dto.NomeEvento!);
+            //var aux2 = await _api.EventosRepository.GetIdAsync(dto.EventoId);
+            // talvez eu precise de uma logica pra veriricar o Id do evento...
 
 
-            var inscricao = _mapper.Map<Inscricao>(dto);
-            
-
-            if(aux.QuantidadeDeCamisasDisponiveis > dto.Camisa)
-            {
-                aux.QuantidadeDeCamisasDisponiveis--;               
-            }
-            else
+            if (aux == null)
             {
                 return null;
             }
+            
 
+            var inscricao = _mapper.Map<Inscricao>(dto);                       
+           
 
             var inscricoes = await _ins.GetAll();
 
             var existe = inscricoes.Any(x => 
             x.EventoId ==  dto.EventoId && 
-            x.UsuarioId == dto.UsuarioId);            
+            x.UsuarioId == dto.UsuarioId);          
 
             if(existe)
             {
@@ -188,6 +184,8 @@ namespace Application.Services
             }
             else
             {
+                aux.QuantidadeDeCamisasDisponiveis--;
+
                 inscricao.DataDeInscricaoDousuario = DateTime.UtcNow;
 
                 _api.InscricaoRepository.Create(inscricao);

@@ -1,4 +1,7 @@
-﻿@model IEnumerable<Application.DataTransferObject.EventoDTO>;
+﻿@using Application.DataTransferObject
+@using Plataforma_Front.ViewModels;
+
+@model IEnumerable<Application.DataTransferObject.EventoDTO>;
 
 
 <div id="carouselEventos" class="carousel slide" data-bs-ride="carousel">
@@ -6,11 +9,19 @@
     <div class="carousel-inner">
 
         @{
-            bool primeiro = true;
+            bool primeiro = true; 
         }
 
         @foreach (var item in Model)
         {
+            
+            var vm = new EventoInscricaoViewModel
+            {
+                Evento = item,
+                Inscricao = new InscricaoDTO()
+            };                        
+
+
             <div class="carousel-item @(primeiro ? "active" : "")">
 
                 <div class="text-center">
@@ -22,22 +33,37 @@
                     <div class="mt-3">
                         <h4>@item.Nome</h4>
 
-                        <p>@item.Descricao</p>
-
+                        <p>
+                            <strong>Descrição:</strong>
+                            @item.Descricao
+                        </p>
                         <p>
                             <strong>Local:</strong>
                             @item.LocalEvento
                         </p>
-
                         <p>
                             <strong>Data do evento:</strong>
                             @item.DataEvento.ToString("dd/MM/yyyy")
                         </p>                      
-
+                        
                         <p>
-                            <strong>Fazer inscrição:</strong>
-                            <!-- botao de inscrição no evento-->
+                            <button class="btn btn-primary" 
+                                    type="button" 
+                                    data-bs-toggle="collapse" 
+                                    data-bs-target="#Collapse_@item.Id" aria-expanded="false" aria-controls="collapseWidthExample">
+                            Fazer Inscrição
+                            </button>
                         </p>
+                        <div class="d-flex justify-content-center" style="min-height: 120px;">
+                            <div class="collapse collapse-horizontal" id="Collapse_@item.Id">
+                                <div class="card card-body" style="width: 300px;">
+                                    <partial name="_PartialInscricao" model="vm" />
+                                </div>
+                            </div>
+                        </div>
+
+
+                        
                     </div>
 
                 </div>
@@ -68,3 +94,4 @@
     </button>
 
 </div>
+

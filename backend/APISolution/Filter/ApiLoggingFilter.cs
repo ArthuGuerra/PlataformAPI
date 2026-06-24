@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc.Filters;
+using Serilog;
 
 namespace APISolution.Filter
 {
@@ -14,10 +15,10 @@ namespace APISolution.Filter
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
            
-            _logger.LogInformation("### Executando ");
+            _logger.LogInformation("### Executando");
             _logger.LogInformation("######################## ");
-            _logger.LogInformation($"### Executando em {DateTime.UtcNow.ToLongTimeString()} ");
-            _logger.LogInformation($"### Executando em {DateTime.UtcNow.ToLongDateString()}");
+            _logger.LogInformation($"### Executando em {DateTime.UtcNow.ToLocalTime().ToLongTimeString()} ");
+            _logger.LogInformation($"### Executando em {DateTime.UtcNow.ToLocalTime().ToLongDateString()}");
 
 
             _logger.LogInformation("ModelState: {ModelState}",context.ModelState.IsValid);

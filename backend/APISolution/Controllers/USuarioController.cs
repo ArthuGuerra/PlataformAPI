@@ -1,6 +1,7 @@
 ﻿using Application.DataTransferObject;
 using Application.Interfaces;
 using Domain.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -18,7 +19,8 @@ namespace APISolution.Controllers
             _us = us;
         }
 
-        [HttpGet("AllUsuarios")]   
+        [HttpGet("AllUsuarios")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult<ICollection<UsuarioPrintDTO>>> GetAll()
         {
             
@@ -36,6 +38,7 @@ namespace APISolution.Controllers
 
 
         [HttpGet("UsuariosInscricoes")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult<ICollection<Usuario>>> UsuarioInscricoes()
         {
             
@@ -53,6 +56,7 @@ namespace APISolution.Controllers
 
 
         [HttpGet("{id}")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult<UsuarioPrintDTO>> GetId(string id)
         {
           
@@ -70,6 +74,7 @@ namespace APISolution.Controllers
 
 
         [HttpGet("Nome")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult<UsuarioPrintDTO>> GetNome(string nome)
         {
            
@@ -88,6 +93,7 @@ namespace APISolution.Controllers
 
 
         [HttpPatch("Update")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult<UsuarioPrintDTO>> UpdateUser(string id, UsuarioPrintDTO dto)
         {
             
@@ -105,6 +111,7 @@ namespace APISolution.Controllers
 
 
         [HttpDelete("Delete")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult<UsuarioPrintDTO>> DeleteUser(string id)
         {
             
