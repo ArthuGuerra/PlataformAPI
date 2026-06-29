@@ -1,0 +1,63 @@
+﻿@using Plataforma_Front.ViewModels;
+@model UsuarioViewModel
+
+
+<div class="container d-flex justify-content-center align-items-center">
+    <div class="card shadow p-4" style="width: 450px;">
+
+        
+        <div class="text-center mb-4">
+            <h1>Log In</h1>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+
+                <form asp-controller="Authentica" asp-action="Token" method="post"
+                      class="form-horizontal">
+
+                    <div asp-validation-summary="All" class="text-danger"></div>
+
+    
+                    <div class="form-group mb-3">
+                        <label asp-for="UserName" class="col-md-2 control-label">
+                            Usuario
+                            <i class="fa-solid fa-user"></i>
+                        </label>
+                        <input asp-for="UserName" type="text" class="form-control"
+                               aria-label="Sizing example input"
+                               aria-describedby="inputGroup-sizing-default" required>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="Password" class="col-md-2 control-label">
+                            Senha
+                            <i class="fa-solid fa-key"></i>
+                        </label>
+                        <input asp-for="Password" type="password" class="form-control"
+                               aria-label="Sizing example input"
+                               aria-describedby="inputGroup-sizing-default" required>
+
+                    </div>
+                                         
+                    <div class="d-flex justify-content-center mt-4">
+                        <button type="submit" class="btn btn-outline-dark">
+                            Enviar
+                            <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                        </button>
+                    </div>
+
+
+
+                 
+
+                </form>
+
+            </div>
+        </div>
+
+
+
+    </div>
+
+</div>

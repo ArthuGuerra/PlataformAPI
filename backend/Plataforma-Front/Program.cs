@@ -1,11 +1,13 @@
 using Microsoft.Extensions.DependencyInjection;
 using Plataforma_Front.Interfaces;
 using Plataforma_Front.Services;
+using System.Net.Http.Headers;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
 
 builder.Services.AddHttpClient("APISolution", a =>
 {
@@ -13,9 +15,22 @@ builder.Services.AddHttpClient("APISolution", a =>
 });
 
 
+builder.Services.AddHttpClient("APIAuth", a =>
+{
+    a.BaseAddress = new Uri(builder.Configuration["ServiceUri:APIAuth"]!);
+    a.DefaultRequestHeaders.Accept.Clear();
+    a.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+});
+
+
+
+
+
+
 
 builder.Services.AddScoped<IEventosServicesMVC, EventosServicesMVC>();
 builder.Services.AddScoped<IInscricaoServiceMVC, InscricaoServiceMVC>();
+builder.Services.AddScoped<IAuthenticacao, AuthenticacaoServiceMVC>();
 
 
 

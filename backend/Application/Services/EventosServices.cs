@@ -158,9 +158,7 @@ namespace Application.Services
 
         public async Task<InscricaoDTO> Inscrição(InscricaoDTO dto)
         {
-            var aux = await _api.EventosRepository.GetEventoNome(dto.NomeEvento!);
-            //var aux2 = await _api.EventosRepository.GetIdAsync(dto.EventoId);
-            // talvez eu precise de uma logica pra veriricar o Id do evento...
+            var aux = await _api.EventosRepository.GetIdAsync(dto.EventoId!);
 
 
             if (aux == null)
@@ -168,7 +166,6 @@ namespace Application.Services
                 return null;
             }
             
-
             var inscricao = _mapper.Map<Inscricao>(dto);                       
            
 

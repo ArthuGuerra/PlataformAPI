@@ -1,4 +1,5 @@
 ﻿@using Application.DataTransferObject
+@using Domain.Entities
 @using Plataforma_Front.ViewModels;
 
 @model IEnumerable<Application.DataTransferObject.EventoDTO>;
@@ -18,7 +19,8 @@
             var vm = new EventoInscricaoViewModel
             {
                 Evento = item,
-                Inscricao = new InscricaoDTO()
+                Inscricao = new InscricaoDTO(),
+                User = new Usuario()
             };                        
 
 
@@ -47,23 +49,27 @@
                         </p>                      
                         
                         <p>
-                            <button class="btn btn-primary" 
-                                    type="button" 
-                                    data-bs-toggle="collapse" 
-                                    data-bs-target="#Collapse_@item.Id" 
-                                    aria-expanded="false" 
-                                    aria-controls="collapseWidthExample">
-                            Fazer Inscrição
-                                <i class="fa-regular fa-pen-to-square"></i>
-                            </button>
-                        </p>
-                        <div class="d-flex justify-content-center" style="min-height: 120px;">
-                            <div class="collapse collapse-horizontal" id="Collapse_@item.Id">
-                                <div class="card card-body" style="width: 300px;">
-                                    <partial name="_PartialInscricao" model="vm" />
+                            <form asp-action="FazerInscricaoPOST" method="post" class="text-center">
+
+                                <p>
+                                    <button class="btn btn-primary"
+                                            type="button"
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#Collapse_@item.Id"
+                                            aria-expanded="false"
+                                            aria-controls="collapseWidthExample">
+                                        Fazer Inscrição
+                                        <i class="fa-regular fa-pen-to-square"></i>
+                                    </button>
+                                </p>
+                                <div class="d-flex justify-content-center" style="min-height: 120px;">
+                                    <div class="collapse collapse-horizontal" id="Collapse_@item.Id">
+                                        <div class="card card-body" style="width: 300px;">
+                                            <partial name="_PartialInscricao" model="vm" />
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
+                            </form>
 
 
                         

@@ -9,10 +9,10 @@ namespace Application.DataTransferObject
     public class InscricaoDTO
     {
 
+        public int Id { get; set; }
         public string? UsuarioId { get; set; }
         public int EventoId { get; set; }
-        public string? NomeEvento { get; set; }
-        public int Id { get; set; }
+        public string? NomeEvento { get; set; }   
 
         
         [Range(0,1)]

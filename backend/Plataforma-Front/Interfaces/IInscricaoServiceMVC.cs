@@ -5,7 +5,7 @@ namespace Plataforma_Front.Interfaces
 {
     public interface IInscricaoServiceMVC
     {
-        Task<IEnumerable<InscricaoDTO>> ShowMyIncricoes();
-        Task<bool> DeleteMyIncricao(int id);
+        Task<IEnumerable<InscricaoDTO>> ShowMyIncricoes(string token);
+        Task<bool> DeleteMyIncricao(int id, string token);
     }
 }

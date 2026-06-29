@@ -98,8 +98,13 @@ namespace Application.Services
 
        
 
-        public string NormalizeNome(string nome)
+        public string NormalizeNome(string? nome)
         {
+            if(string.IsNullOrEmpty(nome))
+            {
+                return string.Empty;
+            }
+
             return String.Join(" ", nome
                 .Trim().
                 ToLower()

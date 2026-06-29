@@ -1,5 +1,6 @@
 ﻿using Application.DataTransferObject.IdentityDTO;
 using Application.Interfaces;
+using Asp.Versioning;
 using Azure;
 using Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
@@ -13,7 +14,8 @@ using System.Security.Claims;
 
 namespace APISolution.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/v{version:apiVersion}/[controller]")]
+    [ApiVersion("1.0")]
     [ApiController]
     public class AuthController : ControllerBase
     {
@@ -22,16 +24,18 @@ namespace APISolution.Controllers
         private readonly RoleManager<IdentityRole> _role;
         private readonly IConfiguration _config;
         private readonly ILogger<AuthController> _logger;
+        private IUsuarioServices _userServices;
 
 
 
-        public AuthController(ITokenService token, UserManager<Usuario> user, RoleManager<IdentityRole> role, IConfiguration config, ILogger<AuthController> logger)
+        public AuthController(ITokenService token, UserManager<Usuario> user, RoleManager<IdentityRole> role, IConfiguration config, ILogger<AuthController> logger, IUsuarioServices userServices)
         {
             _token = token;
             _user = user;
             _role = role;
             _config = config;
             _logger = logger;
+            _userServices = userServices;
         }
 
         [Authorize(Policy = "Super")]
@@ -99,6 +103,7 @@ namespace APISolution.Controllers
                 {
                     new Claim(ClaimTypes.Name, user.UserName!),
                     new Claim(ClaimTypes.Email, user.Email!),
+                    new Claim("userId", user.Id!),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 };
 
@@ -123,7 +128,9 @@ namespace APISolution.Controllers
                 {
                     Token = new JwtSecurityTokenHandler().WriteToken(token),
                     RefreshToken = refreshToken,
-                    Expiration = token.ValidTo
+                    Expiration = token.ValidTo,
+                    Authenticated = true,
+                    Message = "Usuario autenticado com sucesso"
                 });
             }
 
@@ -132,7 +139,7 @@ namespace APISolution.Controllers
 
 
         [HttpPost("Cadastro")]
-        public async Task<IActionResult> Register(RegisterModelDTO model, IUsuarioServices _userServices)
+        public async Task<IActionResult> Register(RegisterModelDTO model)
         {
 
             var userExist = await _userServices.GetAllUsers();
@@ -145,7 +152,7 @@ namespace APISolution.Controllers
 
             var existeEmail = userExist.Any(x => _userServices.NormalizeNome(x.Email!) == email);
 
-            var existeCPF = userExist.Any(x => _userServices.NormalizeNome(x.CPF!) == model.CPF);
+            var existeCPF = userExist.Any(x => _userServices.NormalizeNome(x.CPF) == model.CPF);
 
 
             if (existe || existeEmail || existeCPF)
@@ -164,6 +171,7 @@ namespace APISolution.Controllers
                 };
 
                 var result = await _user.CreateAsync(user, model.Password!);
+                             await _user.AddToRoleAsync(user,"User");
 
                 if (!result.Succeeded)
                 {
@@ -199,7 +207,12 @@ namespace APISolution.Controllers
                 return BadRequest("Access/Refresh Token inválido");
             }
 
-            string username = principal.Identity.Name;
+            string username = principal.Identity?.Name;
+
+            if(string.IsNullOrEmpty(username))
+            {
+                return BadRequest("Token Inválido");
+            }
 
             var user = await _user.FindByNameAsync(username!);
 
@@ -213,6 +226,7 @@ namespace APISolution.Controllers
             var newRefreshToken = _token.GenerateRefreshToken();
 
             user.RefreshToken = newRefreshToken;
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(3);
             await _user.UpdateAsync(user);
 
             return new ObjectResult(new

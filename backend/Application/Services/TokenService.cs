@@ -44,6 +44,8 @@ namespace Application.Services
             return token;                    
         }
 
+
+
         public string GenerateRefreshToken()
         {
             var secureRandomBytes = new byte[128];
@@ -55,6 +57,8 @@ namespace Application.Services
             var refreshToken = Convert.ToBase64String(secureRandomBytes);
             return refreshToken;
         }
+
+
 
         public ClaimsPrincipal GetPrincipalFromExpiredToken(string token, IConfiguration _config)
         {

@@ -5,25 +5,33 @@
 
 
 <div class="text-center">
-
-    
-    <h4>Nome do Evento: @Model?.Evento?.Nome</h4>
+   
 
     <form asp-action="FazerInscricaoPOST" method="post">
 
         <input type="hidden" asp-for="Evento.Id" />
-
+        <input type="hidden" asp-for="Evento.Nome" />
+        
 
         <div class="input-group mb-2">
-            <input asp-for="Inscricao.TamanhoCamisa" class="form-control" placeholder="Tamanho da camisa ( P,M,G )" />
+            <input asp-for="Inscricao.TamanhoCamisa" 
+            class="form-control" 
+            placeholder="Tamanho da camisa ( P,M,G )" 
+            required/>
         </div>
 
         <div class="input-group mb-2">
-            <input asp-for="Inscricao.Cor" class="form-control" placeholder="Cor" />
+            <input asp-for="Inscricao.Cor" 
+            class="form-control" 
+            placeholder="Cor" 
+            required/>
         </div>
 
         <div class="input-group mb-2">
-            <input asp-for="Inscricao.Camisa" class="form-control" placeholder="Quantidade>" />
+            <input asp-for="Inscricao.Camisa" 
+            class="form-control"            
+            placeholder="Quantidade( 1 ou 0 )>" 
+            required/>
         </div>
 
         <button type="submit" class="btn btn-primary">

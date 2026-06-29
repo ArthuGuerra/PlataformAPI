@@ -3,6 +3,7 @@ using Domain.Entities;
 using Plataforma_Front.Interfaces;
 using Plataforma_Front.ViewModels;
 using System.Text.Json;
+using System.Net.Http.Headers;
 
 namespace Plataforma_Front.Services
 {
@@ -14,6 +15,7 @@ namespace Plataforma_Front.Services
         private readonly JsonSerializerOptions _options;
         private readonly InscricaoDTO _inscricaoDTO;
         private ICollection<InscricaoDTO> _inscricoesDTO;
+        //private ICollection<EventoInscricaoViewModel> _tudo;
 
 
         public InscricaoServiceMVC(IHttpClientFactory client)
@@ -21,11 +23,20 @@ namespace Plataforma_Front.Services
             _client = client;
             _options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
         }
+
+        private static void PutTokenInHeaderAuthorization(string token, HttpClient client)
+        {
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        }
+
     
 
-        public async Task<IEnumerable<InscricaoDTO>> ShowMyIncricoes()
+        public async Task<IEnumerable<InscricaoDTO>> ShowMyIncricoes(string token)
         {
             var cli = _client.CreateClient("APISolution");
+
+            PutTokenInHeaderAuthorization(token, cli);
+
 
             using (var response = await cli.GetAsync(apiEndpoint + "Inscricoes"))
             {
@@ -44,9 +55,11 @@ namespace Plataforma_Front.Services
         }
 
 
-        public async Task<bool> DeleteMyIncricao(int id)
+        public async Task<bool> DeleteMyIncricao(int id, string token)
         {
             var cli = _client.CreateClient("APISolution");
+
+            PutTokenInHeaderAuthorization(token, cli);
 
             var url = apiEndpoint + $"DeleteInscricao?id={id}";
 
@@ -56,5 +69,6 @@ namespace Plataforma_Front.Services
 
             return response.IsSuccessStatusCode;
         }
+        
     }
 }

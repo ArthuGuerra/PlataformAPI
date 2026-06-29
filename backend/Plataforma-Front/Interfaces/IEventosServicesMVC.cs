@@ -6,6 +6,6 @@ namespace Plataforma_Front.Interfaces
     {
         Task<IEnumerable<EventoDTO>> GetEventos();
         Task<EventoDTO> GetEventoNome(string nome);
-        Task<bool> FazerInscricaoService(InscricaoDTO dto);
+        Task<bool> FazerInscricaoService(InscricaoDTO dto, string token);
     }
 }

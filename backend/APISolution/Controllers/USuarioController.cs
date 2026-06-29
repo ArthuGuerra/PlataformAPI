@@ -20,7 +20,7 @@ namespace APISolution.Controllers
         }
 
         [HttpGet("AllUsuarios")]
-        [Authorize(Policy = "AdminOnly")]
+        [Authorize(Policy = "Admin")]
         public async Task<ActionResult<ICollection<UsuarioPrintDTO>>> GetAll()
         {
             
@@ -38,7 +38,7 @@ namespace APISolution.Controllers
 
 
         [HttpGet("UsuariosInscricoes")]
-        [Authorize(Policy = "AdminOnly")]
+        [Authorize(Policy = "Admin")]
         public async Task<ActionResult<ICollection<Usuario>>> UsuarioInscricoes()
         {
             
@@ -56,7 +56,7 @@ namespace APISolution.Controllers
 
 
         [HttpGet("{id}")]
-        [Authorize(Policy = "AdminOnly")]
+        [Authorize(Policy = "Admin")]
         public async Task<ActionResult<UsuarioPrintDTO>> GetId(string id)
         {
           
@@ -74,7 +74,7 @@ namespace APISolution.Controllers
 
 
         [HttpGet("Nome")]
-        [Authorize(Policy = "AdminOnly")]
+        [Authorize(Policy = "Admin")]
         public async Task<ActionResult<UsuarioPrintDTO>> GetNome(string nome)
         {
            
@@ -93,7 +93,7 @@ namespace APISolution.Controllers
 
 
         [HttpPatch("Update")]
-        [Authorize(Policy = "AdminOnly")]
+        [Authorize(Policy = "Admin")]
         public async Task<ActionResult<UsuarioPrintDTO>> UpdateUser(string id, UsuarioPrintDTO dto)
         {
             
@@ -111,7 +111,7 @@ namespace APISolution.Controllers
 
 
         [HttpDelete("Delete")]
-        [Authorize(Policy = "AdminOnly")]
+        [Authorize(Policy = "Admin")]
         public async Task<ActionResult<UsuarioPrintDTO>> DeleteUser(string id)
         {
             

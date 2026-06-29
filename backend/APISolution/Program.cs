@@ -186,10 +186,10 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin", "SuperAdmin"));
-    options.AddPolicy("Super", policy => policy.RequireRole("SuperAdmin").RequireClaim(ClaimTypes.Name,"ArthurGuerra","AishaGerage"));
+    options.AddPolicy("Admin", policy => policy.RequireRole("Admin", "SuperAdmin"));
+    options.AddPolicy("Super", policy => policy.RequireRole("SuperAdmin").RequireClaim(ClaimTypes.Name,"ArthurGuerra","AishaGerage").RequireClaim(ClaimTypes.NameIdentifier, "6e509426-cded-49da-bbf6-a7878f6930d5", ""));
     options.AddPolicy("User", policy =>
-    policy.RequireRole("Usuario", "Admin", "SuperAdmin"));
+    policy.RequireRole("User", "Admin", "SuperAdmin"));
 });
 
 

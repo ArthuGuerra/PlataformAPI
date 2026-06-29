@@ -21,26 +21,29 @@
 
                 <div class="text-center">
                    
+                    <div class="row">
+                        <div class="col-12">
+                              
+                            <h4 style="color: darkgreen">@item.NomeEvento</h4>
 
-                    <div class="mt-3">
-                        <h4>@item.NomeEvento</h4>
-
-                        <p>
-                            <strong>Camisa:</strong>
-                            @item.Camisa;
-                        </p>
-
-                        @if (item.Camisa == 1)
-                        {
                             <p>
-                                <strong>Tamanho da Camisa:</strong>
-                                @item.TamanhoCamisa
+                                <strong>Quantidade de Camisa:</strong>
+                                @item.Camisa;
                             </p>
-                            <p>
-                                <strong>Cor:</strong>
-                                @item.Cor
-                            </p>
-                        }
+
+                            @if (item.Camisa == 1)
+                            {
+                                <p>
+                                    <strong>Tamanho da Camisa:</strong>
+                                    @item.TamanhoCamisa
+                                </p>
+                                <p>
+                                    <strong>Cor:</strong>
+                                    @item.Cor
+                                </p>
+                            }
+                        </div>
+                 
 
                       
                         <div class="text-center">
@@ -49,11 +52,11 @@
                                 
                                 <input type="hidden"
                                         name="Id"
-                                        value="@item.Id" />
+                                        value="@item.Id" />                                
 
                                 <button type="submit" class="btn btn-primary">
                                     Apagar Inscrição
-                                    <i class="fa-regular fa-circle-xmark"></i>
+                                    <i class="fa-solid fa-trash-can"></i>
                                 </button>                                
 
                             </form>
