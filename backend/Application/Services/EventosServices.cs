@@ -89,7 +89,7 @@ namespace Application.Services
             if(aux != null)
             {
                 aux.Preco = dto.Preco;
-                aux.QuantidadeDeCamisasDisponiveis = dto.QuantidadeDeCamisasDisponiveis;
+                aux.QuantidadeDeKitsDisponiveis = dto.QuantidadeDeKitsDisponiveis;
 
 
                 _api.EventosRepository.Update(aux);
@@ -181,7 +181,7 @@ namespace Application.Services
             }
             else
             {
-                aux.QuantidadeDeCamisasDisponiveis--;
+                aux.QuantidadeDeKitsDisponiveis--;
 
                 inscricao.DataDeInscricaoDousuario = DateTime.UtcNow;
 

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Plataforma_Front.Interfaces;
 using Plataforma_Front.Services;
@@ -32,6 +33,16 @@ builder.Services.AddScoped<IEventosServicesMVC, EventosServicesMVC>();
 builder.Services.AddScoped<IInscricaoServiceMVC, InscricaoServiceMVC>();
 builder.Services.AddScoped<IAuthenticacao, AuthenticacaoServiceMVC>();
 
+builder.Services
+    .AddAuthentication("Cookies")
+    .AddCookie("Cookies");
+
+
+
+
+
+
+
 
 
 
@@ -48,8 +59,11 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
+
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();

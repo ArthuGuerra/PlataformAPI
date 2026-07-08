@@ -6,7 +6,7 @@ namespace Application.DataTransferObject
 {
     public class CreateEventoDTO
     {
-        public int QuantidadeDeCamisasDisponiveis { get; set; }
+        public int QuantidadeDeKitsDisponiveis { get; set; }
         public double Preco { get; set; }
     }
 }

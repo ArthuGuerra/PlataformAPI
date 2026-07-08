@@ -12,12 +12,11 @@ namespace Domain.Entities
         public int Id { get; set; }
 
         [Range(0,1)]
-        public int Camisa { get; set; }
+        public int QuantidadeKit { get; set; }
 
-        // P, M G ? 
-        public char? TamanhoCamisa { get; set; }
+        public string? TamanhoCamisa { get; set; }
 
-        public string? Cor { get; set; }
+        public string? QuantidadeKm { get; set; }
         public DateTime DataDeInscricaoDousuario { get; set; }
 
         public string? UsuarioId { get; set; }
@@ -25,8 +24,6 @@ namespace Domain.Entities
 
         [JsonIgnore]
         public Usuario? Usuario {  get; set; }
-
-
         public int EventoId { get; set; }
 
         [JsonIgnore]

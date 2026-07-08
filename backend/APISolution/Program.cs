@@ -131,6 +131,7 @@ builder.Services.AddScoped<IInscricaoRepository, InscricaoRepository>();
 builder.Services.AddScoped<IInscricaoServices, InscricaoServices>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 
+
 builder.Services.AddAutoMapper(cfg => { },
     typeof(DomainDTOMappingProfile));
 
@@ -187,7 +188,21 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("Admin", policy => policy.RequireRole("Admin", "SuperAdmin"));
-    options.AddPolicy("Super", policy => policy.RequireRole("SuperAdmin").RequireClaim(ClaimTypes.Name,"ArthurGuerra","AishaGerage").RequireClaim(ClaimTypes.NameIdentifier, "6e509426-cded-49da-bbf6-a7878f6930d5", ""));
+
+
+    options.AddPolicy("Super", policy =>
+    {
+        policy.RequireRole("SuperAdmin");
+        policy.RequireAssertion(context =>
+        {
+            string? nome = context.User.FindFirst(ClaimTypes.Name)?.Value;
+            string userId = context.User.FindFirst("userId")?.Value;
+
+            return (nome == "ArthurGuerra" && userId == "6e509426-cded-49da-bbf6-a7878f6930d5") || (nome == "AishaGerage" && userId == "");
+        });
+    });                                       
+    
+    
     options.AddPolicy("User", policy =>
     policy.RequireRole("User", "Admin", "SuperAdmin"));
 });

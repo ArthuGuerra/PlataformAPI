@@ -14,24 +14,27 @@
         
 
         <div class="input-group mb-2">
-            <input asp-for="Inscricao.TamanhoCamisa" 
-            class="form-control" 
-            placeholder="Tamanho da camisa ( P,M,G )" 
-            required/>
+            <select asp-for="Inscricao.TamanhoCamisa" 
+            class="form-control">
+                <option value="">Selecione o Tamanho</option>
+                <option value="P babylook">P babylook</option>
+                <option value="M babylook">M babylook</option>
+                <option value="P">P</option>
+                <option value="M">M</option>
+                <option value="G">G</option>
+            </select>
         </div>
 
         <div class="input-group mb-2">
-            <input asp-for="Inscricao.Cor" 
+            <input asp-for="Inscricao.QuantidadeKm" 
             class="form-control" 
-            placeholder="Cor" 
-            required/>
+            placeholder="Quantidade de Quilômetros"/>
         </div>
 
         <div class="input-group mb-2">
-            <input asp-for="Inscricao.Camisa" 
+            <input asp-for="Inscricao.QuantidadeKit"
             class="form-control"            
-            placeholder="Quantidade( 1 ou 0 )>" 
-            required/>
+            placeholder="Quantidade de kits( 1 ou 0 )>"/>
         </div>
 
         <button type="submit" class="btn btn-primary">

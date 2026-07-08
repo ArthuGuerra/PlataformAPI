@@ -14,9 +14,7 @@ namespace Plataforma_Front.Services
         private readonly IHttpClientFactory _client;
         private readonly JsonSerializerOptions _options;
         private readonly InscricaoDTO _inscricaoDTO;
-        private ICollection<InscricaoDTO> _inscricoesDTO;
-        //private ICollection<EventoInscricaoViewModel> _tudo;
-
+        private ICollection<InscricaoDTO> _inscricoesDTO;        
 
         public InscricaoServiceMVC(IHttpClientFactory client)
         {

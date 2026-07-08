@@ -110,8 +110,8 @@ namespace Plataforma_Front.Controllers
                     UsuarioId = userId,
                     EventoId = model.Evento.Id,
                     NomeEvento = model.Evento.Nome,
-                    Camisa = model.Inscricao.Camisa,
-                    Cor = model.Inscricao.Cor,
+                    QuantidadeKit = model.Inscricao.QuantidadeKit,
+                    QuantidadeKm = model.Inscricao.QuantidadeKm,
                     TamanhoCamisa = model.Inscricao.TamanhoCamisa
                 };
 

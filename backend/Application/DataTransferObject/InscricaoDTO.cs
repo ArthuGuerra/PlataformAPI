@@ -16,8 +16,8 @@ namespace Application.DataTransferObject
 
         
         [Range(0,1)]
-        public int Camisa { get; set; }
-        public string? Cor { get; set; }
-        public char? TamanhoCamisa { get; set; }
+        public int QuantidadeKit { get; set; }
+        public string? QuantidadeKm { get; set; }
+        public string? TamanhoCamisa { get; set; }
     }
 }

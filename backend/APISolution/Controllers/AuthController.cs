@@ -3,6 +3,8 @@ using Application.Interfaces;
 using Asp.Versioning;
 using Azure;
 using Domain.Entities;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -105,7 +107,7 @@ namespace APISolution.Controllers
                     new Claim(ClaimTypes.Email, user.Email!),
                     new Claim("userId", user.Id!),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                };
+                };               
 
                 foreach (var userRole in userRoles)
                 {

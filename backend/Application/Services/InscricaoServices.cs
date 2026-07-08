@@ -32,7 +32,12 @@ namespace Application.Services
 
         public async Task<InscricaoDTO> Delete(int id)
         {
-            var aux = await _api.InscricaoRepository.GetIdAsync(id);            
+            var aux = await _api.InscricaoRepository.GetIdAsync(id);
+
+            var ev = await _api.EventosRepository.GetIdAsync(aux.EventoId);
+
+            ev.QuantidadeDeKitsDisponiveis++;          
+
                         
              _api.InscricaoRepository.Delete(aux);
 

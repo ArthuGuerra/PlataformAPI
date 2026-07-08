@@ -1,8 +1,12 @@
 ﻿using Application.DataTransferObject;
 using Application.DataTransferObject.IdentityDTO;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Plataforma_Front.Interfaces;
 using Plataforma_Front.ViewModels;
+using System.Security.Claims;
 
 namespace Plataforma_Front.Controllers
 {
@@ -55,6 +59,20 @@ namespace Plataforma_Front.Controllers
                 Expires = result.Expiration
             });
 
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, model.UserName),
+            };
+
+            var identity = new ClaimsIdentity(
+                claims,
+                IdentityConstants.ApplicationScheme);
+
+            var principal = new ClaimsPrincipal(identity);
+
+            await HttpContext.SignInAsync("Cookies", principal);
+
             return Redirect("/");
             
         }
@@ -94,6 +112,8 @@ namespace Plataforma_Front.Controllers
         {
             Response.Cookies.Delete("X-Access-Token");
             Response.Cookies.Delete("X-Refresh-Token");
+
+            await HttpContext.SignOutAsync("Cookies");
 
             return Redirect("/");
         }
