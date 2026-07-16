@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Domain.AppEntities;
+using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -11,6 +12,7 @@ namespace Domain.Entities
         public Usuario()
         {
             Inscricoes = new List<Inscricao>();
+            InscricoesApp = new List<InscricaoApp>();
         }
         
         public string? CPF { get; set; }
@@ -18,5 +20,6 @@ namespace Domain.Entities
         public DateTime RefreshTokenExpiryTime { get; set; }
 
         public ICollection<Inscricao> Inscricoes { get; set; }
+        public ICollection<InscricaoApp> InscricoesApp { get; set; }
     }
 }

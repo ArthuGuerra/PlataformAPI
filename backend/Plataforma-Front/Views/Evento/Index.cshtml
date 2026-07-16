@@ -21,7 +21,14 @@
                 Evento = item,
                 Inscricao = new InscricaoDTO(),
                 User = new Usuario()
-            };                        
+            };
+            
+            var evento = new Evento
+            {
+                Id = item.Id,
+                QuantidadeDeKitsDisponiveis = 0,
+                Preco = 0              
+            };
 
 
             <div class="carousel-item @(primeiro ? "active" : "")">
@@ -46,7 +53,7 @@
                         <p>
                             <strong>Data do evento:</strong>
                             @item.DataEvento.ToString("dd/MM/yyyy")
-                        </p>                      
+                        </p>
                         
                         <p>
                             <form asp-action="FazerInscricaoPOST" method="post" class="text-center">
@@ -55,7 +62,7 @@
                                     <button class="btn btn-primary"
                                             type="button"
                                             data-bs-toggle="collapse"
-                                            data-bs-target="#Collapse_@item.Id"
+                                            data-bs-target="#CollapseInscricao_@item.Id"
                                             aria-expanded="false"
                                             aria-controls="collapseWidthExample">
                                         Fazer Inscrição
@@ -63,13 +70,76 @@
                                     </button>
                                 </p>
                                 <div class="d-flex justify-content-center" style="min-height: 120px;">
-                                    <div class="collapse collapse-horizontal" id="Collapse_@item.Id">
+                                    <div class="collapse collapse-horizontal" id="CollapseInscricao_@item.Id">
                                         <div class="card card-body" style="width: 300px;">
                                             <partial name="_PartialInscricao" model="vm" />
                                         </div>
                                     </div>
                                 </div>
                             </form>
+                            @if (User.IsInRole("SuperAdmin"))
+                            {
+                                <form asp-action="DeleteEE" method="post" class="text-center">                                    
+
+                                    <input type="hidden" name="id" value="@item.Id" />
+
+                                    @Html.AntiForgeryToken()
+
+                                    <p>
+                                        <button class="btn btn-primary"
+                                        type="submit">
+                                            Deletar Evento
+                                            <i class="fa-regular fa-pen-to-square"></i>
+                                        </button>
+                                    </p>
+
+                                </form>                               
+
+                                <form asp-action="UpdateADM" method="post" class="text-center">
+
+                                    <p>
+                                        <button class="btn btn-primary"
+                                        type="button"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#CollapseUpdateADM_@item.Id"
+                                        aria-expanded="false"
+                                        aria-controls="collapseWidthExample">
+                                            Atualizar Evento ADM
+                                            <i class="fa-regular fa-pen-to-square"></i>
+                                        </button>
+                                    </p>
+                                    <div class="d-flex justify-content-center" style="min-height: 120px;">
+                                        <div class="collapse collapse-horizontal" id="CollapseUpdateADM_@item.Id">
+                                            <div class="card card-body" style="width: 300px;">
+                                                <partial name="_PartialUpdateADM" model="evento" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+
+                                <form asp-action="UpdateEE" method="post" class="text-center">
+
+                                    <p>
+                                        <button class="btn btn-primary"
+                                        type="button"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#CollapseUpdateEE_@item.Id"
+                                        aria-expanded="false"
+                                        aria-controls="collapseWidthExample">
+                                            Atualizar Evento
+                                            <i class="fa-regular fa-pen-to-square"></i>
+                                        </button>
+                                    </p>
+                                    <div class="d-flex justify-content-center" style="min-height: 120px;">
+                                        <div class="collapse collapse-horizontal" id="CollapseUpdateEE_@item.Id">
+                                            <div class="card card-body" style="width: 300px;">
+                                                <partial name="_PartialUpdate" model="item" />
+                                            </div> 
+                                        </div>
+                                    </div>
+                                </form>   
+                            }
+
 
 
                         

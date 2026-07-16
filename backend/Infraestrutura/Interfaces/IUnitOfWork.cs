@@ -10,6 +10,8 @@ namespace Infraestrutura.Interfaces
         public IUsuariosRepository UsuariosRepository { get; set; }
         public IEventosRepository EventosRepository { get; set; }
         public IInscricaoRepository InscricaoRepository { get; set; }
+        public IInscricaoAppRepository InscricaoAppRepository { get; set; }
+        public ITurmasRepository TurmasAppRepository { get; set; }
 
         public Task Commit();
         public Task Disposes();

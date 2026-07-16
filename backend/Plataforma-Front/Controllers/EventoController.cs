@@ -1,10 +1,12 @@
 ﻿using Application.DataTransferObject;
 using AspNetCoreGeneratedDocument;
 using Domain.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Plataforma_Front.Interfaces;
 using Plataforma_Front.ViewModels;
+using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
@@ -71,8 +73,6 @@ namespace Plataforma_Front.Controllers
                 // pensar em retirar isso aqui
             }
 
-
-
             var vm = new EventoInscricaoViewModel
             {
                 Evento = evento,
@@ -86,7 +86,8 @@ namespace Plataforma_Front.Controllers
         
 
         [HttpPost]
-        public async Task<IActionResult> FazerInscricaoPOST(EventoInscricaoViewModel model)
+        [Authorize(Roles = "User,Admin")]
+        public async Task<IActionResult>FazerInscricaoPOST(EventoInscricaoViewModel model)
         {
 
             var token = Request.Cookies["X-Access-Token"];
@@ -112,16 +113,151 @@ namespace Plataforma_Front.Controllers
                     NomeEvento = model.Evento.Nome,
                     QuantidadeKit = model.Inscricao.QuantidadeKit,
                     QuantidadeKm = model.Inscricao.QuantidadeKm,
-                    TamanhoCamisa = model.Inscricao.TamanhoCamisa
+                    TamanhoCamisa = model.Inscricao.TamanhoCamisa,
+                    Genero = model.Inscricao.Genero
+                    
                 };
 
                 await _evento.FazerInscricaoService(dto, ObterTokenJWT());
 
                 return RedirectToAction("Index", "Inscricao");
-            }
-        
-
+            }        
         }
+
+        [HttpGet]
+        [Authorize(Roles = "SuperAdmin")]        
+        public async Task<ActionResult> CreateEve()
+        {
+            return View(new EventoDTO());
+        }
+
+
+
+        [HttpPost]
+        [Authorize(Roles = "SuperAdmin")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(EventoDTO evento)
+        {
+            var token = Request.Cookies["X-Access-Token"];
+
+            var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
+
+            var userId = jwt.Claims
+                .FirstOrDefault(x => x.Type == "userId")?.Value;
+
+
+            if (evento == null && userId == null)
+            {
+                ViewBag.Erro = "Dados para inscrição inválidos ou Usuário não Autenticado.";
+                return View("Error");
+            }
+            else
+            {
+                var dto = new EventoDTO
+                {
+                    Nome = evento.Nome,
+                    Imagem = evento.Imagem,
+                    DataEvento = evento.DataEvento,
+                    Descricao = evento.Descricao,
+                    LocalEvento = evento.LocalEvento                    
+                };
+
+                await _evento.CriarEvento(dto, ObterTokenJWT());
+
+                return RedirectToAction("Index", "Evento");
+            }
+        }
+
+      
+
+        [HttpPost]
+        [Authorize(Roles = "SuperAdmin")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateADM(Evento evento)
+        {
+            var token = Request.Cookies["X-Access-Token"];
+
+            var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
+
+            var userId = jwt.Claims
+                .FirstOrDefault(x => x.Type == "userId")?.Value;
+
+
+            if (userId == null)
+            {
+                ViewBag.Erro = "Dados para inscrição inválidos ou Usuário não Autenticado.";
+                return View("Error");
+            }
+            else
+            {
+                var dto = new Evento
+                {
+                    Id = evento.Id,
+                    QuantidadeDeKitsDisponiveis = evento.QuantidadeDeKitsDisponiveis,
+                    Preco = evento.Preco
+                };
+
+                await _evento.UpdateEventoADM(dto, ObterTokenJWT());
+
+                return RedirectToAction("Index", "Evento");
+            }
+        }       
+
+
+        [HttpPost]
+        [Authorize(Roles = "SuperAdmin")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateEE(EventoDTO evento)
+        {
+            var token = Request.Cookies["X-Access-Token"];
+
+            var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
+
+            var userId = jwt.Claims
+                .FirstOrDefault(x => x.Type == "userId")?.Value;
+
+
+            if (evento == null && userId == null)
+            {
+                ViewBag.Erro = "Dados para inscrição inválidos ou Usuário não Autenticado.";
+                return View("Error");
+            }
+            else
+            {
+               
+                await _evento.UpdateEvento(evento, ObterTokenJWT());
+
+                return RedirectToAction("Index", "Evento");
+            }
+        }
+     
+
+        [HttpPost]
+        [Authorize(Roles ="SuperAdmin")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteEE(int id)
+        {
+            var token = Request.Cookies["X-Access-Token"];
+
+            var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
+
+            var userId = jwt.Claims
+                .FirstOrDefault(x => x.Type == "userId")?.Value;
+
+
+            if (id <= 0 && userId == null)
+            {
+                ViewBag.Erro = "Dados para inscrição inválidos ou Usuário não Autenticado.";
+                return View("Error");
+            }
+            else
+            {                
+                await _evento.DeleteEvento(id, ObterTokenJWT());
+                return RedirectToAction("Index", "Evento");
+            }
+        }
+
+
 
 
 

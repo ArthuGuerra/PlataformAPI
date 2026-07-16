@@ -1,5 +1,7 @@
 ﻿using Application.DataTransferObject;
+using Application.DataTransferObject.AppDTO;
 using AutoMapper;
+using Domain.AppEntities;
 using Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -16,6 +18,9 @@ namespace Application.MapperExtension
             CreateMap<Usuario, UsuarioPrintDTO>().ReverseMap();
             CreateMap<UsuarioSenhaDTO, UsuarioPrintDTO>().ReverseMap();
             CreateMap<Inscricao,InscricaoDTO>().ReverseMap();
+
+            CreateMap<InscricaoApp,InscricaoAppDTO>().ReverseMap();
+            CreateMap<Turmas,TurmasDTO>().ReverseMap();
         }
     }
 }

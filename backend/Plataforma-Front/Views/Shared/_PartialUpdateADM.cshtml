@@ -1,0 +1,41 @@
+﻿@using Domain.Entities;
+@using System.Security.Claims;
+
+@model Evento
+
+
+<div class="text-center">
+   
+    <form asp-action="UpdateADM" method="post">
+
+        <input type="hidden" asp-for="@Model.Id" />
+        <input type="hidden" asp-for="@Model.Nome" />
+        
+        <div class="card shadow-sm p-5 mx-auto" style="max-width: 500px;">
+
+            <div class="input-group mb-4">
+                <strong>Quantidade de kit Disponível:</strong>
+                <input asp-for="@Model.QuantidadeDeKitsDisponiveis" 
+                class="form-control"
+                type="text"            
+                value="@Model.QuantidadeDeKitsDisponiveis"/>
+            </div>
+
+            <div class="input-group mb-4">
+                <strong>Preço</strong>
+                <input asp-for="@Model.Preco"
+                class="form-control"
+                type="text"
+                value="@Model.Preco"
+               />
+            </div>
+
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            Enviar
+            <i class="fa-solid fa-arrow-right-to-bracket"></i>
+        </button>
+
+    </form>
+</div>

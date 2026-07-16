@@ -47,7 +47,7 @@ namespace Plataforma_Front.Controllers
         {
             var aux = await _ins.DeleteMyIncricao(id, ObterTokenJWT());
 
-            if(aux == null)
+            if(aux is not true)
             {
                 return View("Error");
             }

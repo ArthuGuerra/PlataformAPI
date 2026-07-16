@@ -86,7 +86,7 @@ namespace APISolution.Controllers
 
             if(aux != null)
             {
-                return Created();                                               
+                return Ok(aux);                                               
             }
             else
             {

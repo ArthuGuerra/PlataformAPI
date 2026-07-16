@@ -13,7 +13,6 @@ namespace Plataforma_Front.Services
         private const string apiEndpoint = "/api/v1/Inscricao/";
         private readonly IHttpClientFactory _client;
         private readonly JsonSerializerOptions _options;
-        private readonly InscricaoDTO _inscricaoDTO;
         private ICollection<InscricaoDTO> _inscricoesDTO;        
 
         public InscricaoServiceMVC(IHttpClientFactory client)

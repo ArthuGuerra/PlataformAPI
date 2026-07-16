@@ -6,36 +6,54 @@
 
 <div class="text-center">
    
-
     <form asp-action="FazerInscricaoPOST" method="post">
 
-        <input type="hidden" asp-for="Evento.Id" />
-        <input type="hidden" asp-for="Evento.Nome" />
+        <input type="hidden" asp-for="@Model.Evento.Id"/>
+        <input type="hidden" asp-for="@Model.Evento.Nome"/>
         
+        <div class="card shadow-sm p-5 mx-auto" style="max-width: 700px;">
 
-        <div class="input-group mb-2">
-            <select asp-for="Inscricao.TamanhoCamisa" 
-            class="form-control">
-                <option value="">Selecione o Tamanho</option>
-                <option value="P babylook">P babylook</option>
-                <option value="M babylook">M babylook</option>
-                <option value="P">P</option>
-                <option value="M">M</option>
-                <option value="G">G</option>
-            </select>
-        </div>
+            <div class="input-group mb-3">
+                <strong>Quantidade de Kit ( 1 ou 0 )</strong>
+                <input asp-for="@Model.Inscricao.QuantidadeKit"
+                       class="form-control" 
+                       value="@Model.Inscricao.QuantidadeKit"/>
+            </div>
 
-        <div class="input-group mb-2">
-            <input asp-for="Inscricao.QuantidadeKm" 
-            class="form-control" 
-            placeholder="Quantidade de Quilômetros"/>
-        </div>
+            <div class="input-group mb-3">
 
-        <div class="input-group mb-2">
-            <input asp-for="Inscricao.QuantidadeKit"
-            class="form-control"            
-            placeholder="Quantidade de kits( 1 ou 0 )>"/>
+                <select asp-for="@Model.Inscricao.Genero"
+                        class="form-control"/>
+                    <option value="">Selecione seu Gênero</option>
+                    <option value="Masculino">Masculino</option>
+                    <option value="Feminino">Feminino</option>
+                    <option value="Outros">Nao informar</option>
+                </select>
+
+            </div>
+
+            <div class="input-group mb-3">
+                <select asp-for="@Model.Inscricao.TamanhoCamisa"
+                        class="form-control">
+                    <option value="">Selecione o Tamanho da Camisa</option>
+                    <option value="P babylook">P babylook</option>
+                    <option value="M babylook">M babylook</option>
+                    <option value="P">P</option>
+                    <option value="M">M</option>
+                    <option value="G">G</option>
+                </select>
+            </div>
+
+            <div class="input-group mb-3">
+                <strong>Quantidade de Quilômetros</strong>
+                <input asp-for="@Model.Inscricao.QuantidadeKm"
+                       class="form-control"
+                       placeholder="Quantidade de Quilômetros" 
+                   value="@Model.Inscricao.QuantidadeKm"/>
+            </div>
+
         </div>
+      
 
         <button type="submit" class="btn btn-primary">
             Enviar

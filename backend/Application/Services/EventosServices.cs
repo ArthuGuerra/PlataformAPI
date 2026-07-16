@@ -168,12 +168,11 @@ namespace Application.Services
             
             var inscricao = _mapper.Map<Inscricao>(dto);                       
            
-
             var inscricoes = await _ins.GetAll();
 
             var existe = inscricoes.Any(x => 
             x.EventoId ==  dto.EventoId && 
-            x.UsuarioId == dto.UsuarioId);          
+            x.UsuarioId == dto.UsuarioId);            
 
             if(existe)
             {
@@ -181,8 +180,16 @@ namespace Application.Services
             }
             else
             {
-                aux.QuantidadeDeKitsDisponiveis--;
-
+               
+                if(dto.QuantidadeKit == 1)
+                {
+                   aux.QuantidadeDeKitsDisponiveis--;
+                }
+                else
+                {
+                    dto.TamanhoCamisa = null;                                      
+                }
+                
                 inscricao.DataDeInscricaoDousuario = DateTime.UtcNow;
 
                 _api.InscricaoRepository.Create(inscricao);

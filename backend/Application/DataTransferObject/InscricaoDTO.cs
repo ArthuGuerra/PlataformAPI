@@ -19,5 +19,6 @@ namespace Application.DataTransferObject
         public int QuantidadeKit { get; set; }
         public string? QuantidadeKm { get; set; }
         public string? TamanhoCamisa { get; set; }
+        public string? Genero { get; set; }
     }
 }

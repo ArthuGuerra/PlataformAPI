@@ -1,5 +1,6 @@
 ﻿using Application.DataTransferObject;
 using Application.Interfaces;
+using Domain.Entities;
 using Infraestrutura.Interfaces;
 using Plataforma_Front.Interfaces;
 using System.Net.Http.Headers;
@@ -14,7 +15,7 @@ namespace Plataforma_Front.Services
         private const string apiEndpoint = "/api/v1/Evento/";
         private readonly IHttpClientFactory _client;
         private readonly JsonSerializerOptions _options;
-        private EventoDTO _eventoDTO;
+        private EventoDTO _eventoDTO;        
         private ICollection<EventoDTO> _eventosDTO;
 
 
@@ -99,8 +100,129 @@ namespace Plataforma_Front.Services
             }
         }
 
+        public async Task<bool> CriarEvento(EventoDTO dto, string token)
+        {
+            var cli = _client.CreateClient("APISolution");
+
+            PutTokenInHeaderAuthorization(token, cli);
+            
+            try
+            {
+                using var response = await cli.PostAsJsonAsync("api/v1/Evento/CreateEvento", dto);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    return false;
+                }
+                else
+                {
+                    return true;
+                }
+                            
+            }
+            catch (HttpRequestException)
+            {
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                throw;
+            }
 
 
 
+        }
+
+        public async Task<bool> UpdateEventoADM(Evento dto, string token)
+        {
+            var cli = _client.CreateClient("APISolution");
+
+            PutTokenInHeaderAuthorization(token, cli);
+
+            try
+            {
+                using var response = await cli.PatchAsJsonAsync($"api/v1/Evento/UpdateADM?id={dto.Id}", dto);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    return false;
+                }
+                else
+                {
+                    return true;
+                }
+
+                
+            }
+            catch (HttpRequestException)
+            {
+                return false;
+            }
+        }
+
+
+
+
+        
+
+        public async Task<bool> UpdateEvento(EventoDTO dto, string token)
+        {
+            var cli = _client.CreateClient("APISolution");
+
+            PutTokenInHeaderAuthorization(token, cli);
+
+            try
+            {
+                using var response = await cli.PatchAsJsonAsync($"api/v1/Evento/Update?id={dto.Id}", dto);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    return false;
+                }
+                else
+                {
+                    return true;
+                }
+
+               
+            }
+            catch (HttpRequestException)
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> DeleteEvento(int id, string token)
+        {
+            var cli = _client.CreateClient("APISolution");
+
+            PutTokenInHeaderAuthorization(token, cli);
+
+            try
+            {
+                using var response = await cli.GetAsync($"api/v1/Evento/{id}");
+
+                if (response != null)
+                {
+                    var del = await cli.DeleteAsync($"api/v1/Evento/Delete?id={id}");
+
+                    return del.IsSuccessStatusCode;
+                }
+                else
+                {
+                    return false;
+                }
+            }catch (HttpRequestException)
+            {
+                return false;
+            }
+            catch (TaskCanceledException)
+            {
+                return false;
+            }
+        }
+
+        
     }
 }

@@ -25,6 +25,8 @@ using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using APISolution.MyRateLimit;
 using Asp.Versioning;
+using Application.InterfacesApp;
+using Application.ServicesApp;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -130,10 +132,25 @@ builder.Services.AddScoped<IUsuarioServices,UsuariosServices>();
 builder.Services.AddScoped<IInscricaoRepository, InscricaoRepository>();
 builder.Services.AddScoped<IInscricaoServices, InscricaoServices>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<ITurmasRepository, TurmasRepository>();
+builder.Services.AddScoped<IInscricaoAppRepository, InscricaoAppRepository>();
+builder.Services.AddScoped<IInscricaoAppServices, InscricaoAppServices>();
+builder.Services.AddScoped<ITurmasServices, TurmasServices>();
 
 
 builder.Services.AddAutoMapper(cfg => { },
     typeof(DomainDTOMappingProfile));
+
+
+
+builder.Services
+    .AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(
+            new JsonStringEnumConverter()
+        );
+    });
 
 
 
@@ -198,7 +215,7 @@ builder.Services.AddAuthorization(options =>
             string? nome = context.User.FindFirst(ClaimTypes.Name)?.Value;
             string userId = context.User.FindFirst("userId")?.Value;
 
-            return (nome == "ArthurGuerra" && userId == "6e509426-cded-49da-bbf6-a7878f6930d5") || (nome == "AishaGerage" && userId == "");
+            return (nome == "ArthurGuerra" && userId == "6e509426-cded-49da-bbf6-a7878f6930d5");
         });
     });                                       
     

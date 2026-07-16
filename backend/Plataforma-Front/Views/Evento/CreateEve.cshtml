@@ -1,0 +1,63 @@
+﻿@using Application.DataTransferObject;
+
+@model EventoDTO
+
+
+<h2>Criar Evento</h2>
+<hr />
+<hr />
+
+
+
+<form asp-action="Create" method="post">
+
+    <div class="input-group mb-3">
+        <input type="text"
+               class="form-control"
+               placeholder="Nome do Evento"
+               required
+               name="nome"
+               value="@Model.Nome"/>       
+    </div>
+    <div class="input-group mb-3">
+        <input type="text"
+               class="form-control"
+               placeholder="Imagem"
+               required
+               name="Imagem"
+               value="@Model.Imagem"/>
+    </div>
+    <div class="input-group mb-3">
+        <input type="text"
+               class="form-control"
+               placeholder="Descrição"
+               required
+               name="Descricao"
+               value="@Model.Descricao" />
+    </div>
+    <div class="input-group mb-3">
+        <input type="text"
+               class="form-control"
+               placeholder="Local do Evento"
+               required
+               name="LocalEvento"
+               value="@Model.LocalEvento" />
+    </div>
+    <div class="input-group mb-3">
+        <input type="text"
+               class="form-control"
+               placeholder="Data do Evento"
+               required
+               name="DataEvento"
+               value="@Model.DataEvento" />
+    </div>   
+    <div>
+        <button type="submit" class="btn btn-primary">
+            Criar
+        </button>
+    </div>
+
+</form>
+
+
+

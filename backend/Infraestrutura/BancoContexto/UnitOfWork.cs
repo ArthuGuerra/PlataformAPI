@@ -10,17 +10,27 @@ namespace Infraestrutura.BancoContexto
     public class UnitOfWork : IUnitOfWork
     {
         private  ApiContext? _api;
-        private  IUsuariosRepository _usuarios;
-        private  IEventosRepository _eventos;
+        private IUsuariosRepository _usuarios;
+        private IEventosRepository _eventos;
         private IInscricaoRepository _inscricao;
+        private IInscricaoAppRepository _inscricaoApp;
+        private ITurmasRepository _turmas;
 
 
-        public UnitOfWork(ApiContext api, IUsuariosRepository usuarios, IEventosRepository eventos, IInscricaoRepository inscricao)
+        public UnitOfWork (
+            ApiContext api, 
+            IUsuariosRepository usuarios, 
+            IEventosRepository eventos, 
+            IInscricaoRepository inscricao,
+            IInscricaoAppRepository inscricaoApp,
+            ITurmasRepository turmas )
         {
             _api = api;
             _usuarios = usuarios;
             _eventos = eventos; 
             _inscricao = inscricao;
+            _inscricaoApp = inscricaoApp;
+            _turmas = turmas;
         }
 
         public IUsuariosRepository UsuariosRepository 
@@ -54,6 +64,29 @@ namespace Infraestrutura.BancoContexto
 
             set { _inscricao = value; }
         }
+
+        public IInscricaoAppRepository InscricaoAppRepository
+        {
+            get
+            {
+                return _inscricaoApp = _inscricaoApp ?? new InscricaoAppRepository(_api);
+            }
+
+            set { _inscricaoApp = value;  }
+        }
+
+        public ITurmasRepository TurmasAppRepository
+        {
+            get
+            {
+                return _turmas = _turmas ?? new TurmasRepository(_api);
+            }
+
+            set { _turmas = value; }
+        }
+
+
+
 
         public async Task Commit()
         {

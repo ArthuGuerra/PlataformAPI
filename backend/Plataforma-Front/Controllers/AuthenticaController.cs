@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 using Plataforma_Front.Interfaces;
 using Plataforma_Front.ViewModels;
 using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
+
 
 namespace Plataforma_Front.Controllers
 {
@@ -60,15 +62,28 @@ namespace Plataforma_Front.Controllers
             });
 
 
-            var claims = new List<Claim>
+            var handler = new JwtSecurityTokenHandler();
+            var jwt = handler.ReadJwtToken(result.Token);
+
+            var claims = jwt.Claims.ToList();
+
+            // mapeia Name
+            var uniqueName = claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.UniqueName);
+            
+            if(uniqueName != null)
             {
-                new Claim(ClaimTypes.Name, model.UserName),
-            };
+                claims.Add(new Claim(ClaimTypes.Name, uniqueName.Value));
+            }
 
-            var identity = new ClaimsIdentity(
-                claims,
-                IdentityConstants.ApplicationScheme);
+            // Mapeia as Roles
+            foreach (var role in claims.Where(c => c.Type == "role").ToList())
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role.Value));
+            }
 
+
+            var identity = new ClaimsIdentity( claims, IdentityConstants.ApplicationScheme); 
+            
             var principal = new ClaimsPrincipal(identity);
 
             await HttpContext.SignInAsync("Cookies", principal);
@@ -85,7 +100,7 @@ namespace Plataforma_Front.Controllers
 
 
         [HttpPost]
-        public async Task<IActionResult> Cadastro(RegisterModelDTO model)
+        public async Task<IActionResult> CadastroUser(RegisterModelDTO model)
         {
             if (!ModelState.IsValid)
             {

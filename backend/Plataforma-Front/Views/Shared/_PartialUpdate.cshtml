@@ -1,0 +1,61 @@
+﻿@using Application.DataTransferObject;
+@using System.Security.Claims;
+
+@model EventoDTO
+
+
+<div class="text-center">
+
+    <form asp-action="UpdateEE" method="post">
+
+        <input type="hidden" asp-for="@Model.Id" />       
+
+        <div class="card shadow-sm p-4 mx-auto" style="max-width: 500px">
+            
+                <div class="input-group mb-2">
+                    <input asp-for="@Model.Nome"
+                           class="form-control"
+                           placeholder="Nome do Evento"
+                           type="text"
+                           value="@Model.Nome"/>
+                </div>
+
+                <div class="input-group mb-2">
+                    <input asp-for="@Model.Imagem"
+                           type="text"
+                           value="@Model.Imagem"
+                           class="form-control"
+                           placeholder="Imagem" />
+                </div>
+                <div class="input-group mb-2">
+                    <input asp-for="@Model.Descricao"
+                           type="text"
+                           value="@Model.Descricao"
+                           class="form-control"
+                           placeholder="Descrição" />
+                </div>
+                <div class="input-group mb-2">
+                    <input asp-for="@Model.DataEvento"
+                           type="text"
+                           value="@Model.DataEvento"
+                           class="form-control"
+                           placeholder="Data do Evento" />
+                </div>
+                <div class="input-group mb-2">
+                    <input asp-for="@Model.LocalEvento"
+                           type="text"
+                           value="@Model.LocalEvento"
+                           class="form-control"
+                           placeholder="Local do Evento" />
+                </div>
+            
+        </div>
+       
+
+        <button type="submit" class="btn btn-primary">
+            Enviar
+            <i class="fa-solid fa-arrow-right-to-bracket"></i>
+        </button>
+
+    </form>
+</div>

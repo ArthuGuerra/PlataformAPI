@@ -4,6 +4,7 @@ using Infraestrutura.BancoContexto;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infraestrutura.Migrations
 {
     [DbContext(typeof(ApiContext))]
-    partial class ApiContextModelSnapshot : ModelSnapshot
+    [Migration("20260714012422_iniciando as funçoes do aplicativo")]
+    partial class iniciandoasfunçoesdoaplicativo
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -126,9 +129,6 @@ namespace Infraestrutura.Migrations
 
                     b.Property<int>("EventoId")
                         .HasColumnType("int");
-
-                    b.Property<string>("Genero")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("NomeEvento")
                         .HasColumnType("nvarchar(max)");

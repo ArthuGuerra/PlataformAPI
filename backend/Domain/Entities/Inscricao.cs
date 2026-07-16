@@ -15,7 +15,7 @@ namespace Domain.Entities
         public int QuantidadeKit { get; set; }
 
         public string? TamanhoCamisa { get; set; }
-
+        public string? Genero { get; set; }
         public string? QuantidadeKm { get; set; }
         public DateTime DataDeInscricaoDousuario { get; set; }
 

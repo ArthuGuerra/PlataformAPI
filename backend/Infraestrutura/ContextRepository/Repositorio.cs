@@ -10,9 +10,9 @@ namespace Infraestrutura.ContextRepository
 {
     public class Repositorio<T> : IRepository<T> where T : class
     {
-        private readonly ApiContext _api;
+        protected readonly DbContext _api;
 
-        public Repositorio(ApiContext api)
+        public Repositorio(DbContext api)
         {
             _api = api;
         }
@@ -23,41 +23,33 @@ namespace Infraestrutura.ContextRepository
         {
             var aux = new List<T>();
                        
-            aux = await _api.Set<T>().AsNoTracking().ToListAsync();           
-               
-            return aux;
-
+            return await _api.Set<T>().AsNoTracking().ToListAsync();          
+                           
             // se tiver mts registros devo adicionar um limite de consulta. mas.. e se eu quiser mais do q o limite ? (:
         }
 
         public async Task<T> GetIdAsync(int id)
         {
-
-            var aux = await _api.Set<T>().FindAsync(id);
-            return aux;
+            return await _api.Set<T>().FindAsync(id);            
         }
 
 
         public T Create(T entity)
         {
-
             _api.Set<T>().Add(entity);
             return entity;                    
         }
 
         public T Update(T entity)
         {
-            //_api.Entry(entity).State = EntityState.Modified;
-
+            
             _api.Set<T>().Update(entity);
-
             return entity;
         }
 
         public T Delete(T entity)
         {
             _api.Set<T>().Remove(entity);
-
             return entity;
         }        
     }

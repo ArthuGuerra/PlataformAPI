@@ -35,7 +35,14 @@
                             <a class="nav-link text-dark" asp-area="" asp-controller="Evento" 
                             asp-action="GetNome"><i class="fa-solid fa-magnifying-glass"></i></a>
                         </li>
-                        
+                        @if (User.IsInRole("SuperAdmin"))
+                            {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Evento"
+                                   asp-action="CreateEve">Criar Evento</a>
+                            </li>
+                            }
+
                     </ul>
                        <ul class="navbar-nav d-flex flex-row align-items-center gap-3">
 
