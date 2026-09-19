@@ -17,7 +17,7 @@ namespace Infraestrutura.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.9")
+                .HasAnnotation("ProductVersion", "10.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -121,7 +121,7 @@ namespace Infraestrutura.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("DataDeInscricaoDousuario")
+                    b.Property<DateTime>("DataDeInscricao")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("EventoId")
@@ -132,9 +132,6 @@ namespace Infraestrutura.Migrations
 
                     b.Property<string>("NomeEvento")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("QuantidadeKit")
-                        .HasColumnType("int");
 
                     b.Property<string>("QuantidadeKm")
                         .HasColumnType("nvarchar(max)");

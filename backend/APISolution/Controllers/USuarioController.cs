@@ -20,44 +20,24 @@ namespace APISolution.Controllers
         }
 
         [HttpGet("AllUsuarios")]
-        [Authorize(Policy = "Admin")]
+        [Authorize(Policy = "Super")]
         public async Task<ActionResult<ICollection<UsuarioPrintDTO>>> GetAll()
-        {
-            
-            var aux = await _us.GetAllUsers();
-
-            if(aux != null)
-            {
-                return Ok(aux);
-            }
-            else
-            {
-                return NotFound(aux);
-            }                       
+        {                                    
+            return Ok(await _us.GetAllUsers());                              
         }
 
 
         [HttpGet("UsuariosInscricoes")]
-        [Authorize(Policy = "Admin")]
+        [Authorize(Policy = "Super")]
         public async Task<ActionResult<ICollection<Usuario>>> UsuarioInscricoes()
-        {
-            
-            var aux = await _us.UsuarioInscricao();
-
-            if (aux == null)
-            {
-                return NotFound(aux);
-            }
-            else
-            {
-                return Ok(aux);
-            }            
+        {                       
+            return Ok(await _us.UsuarioInscricao());                       
         }
 
 
         [HttpGet("{id}")]
         [Authorize(Policy = "Admin")]
-        public async Task<ActionResult<UsuarioPrintDTO>> GetId(string id)
+        public async Task<IActionResult> GetId(string id)
         {
           
             var aux = await _us.GetIdUsuario(id);
@@ -68,14 +48,14 @@ namespace APISolution.Controllers
             }
             else
             {
-                return NotFound(aux);
+                return NotFound($"Não foi possível localizar o id: {id}");
             }                        
         }
 
 
         [HttpGet("Nome")]
-        [Authorize(Policy = "Admin")]
-        public async Task<ActionResult<UsuarioPrintDTO>> GetNome(string nome)
+        [Authorize(Policy = "Super")]
+        public async Task<IActionResult> GetNome(string nome)
         {
            
             var aux = await _us.GetNomeUsers(nome);
@@ -86,45 +66,70 @@ namespace APISolution.Controllers
             }
             else
             {
-                return NotFound(aux);
+                return NotFound($"Não foi possível localizar o usuário: {nome}");
             }                        
         }
 
 
 
         [HttpPatch("Update")]
-        [Authorize(Policy = "Admin")]
-        public async Task<ActionResult<UsuarioPrintDTO>> UpdateUser(string id, UsuarioPrintDTO dto)
+        [Authorize(Policy = "User")]
+        public async Task<IActionResult> UpdateUser(string id, UsuarioPrintDTO dto)
         {
             
             var aux = await _us.UpdateUsers(id, dto);
 
-            if(aux != null)
+            if(aux is true)
             {
                 return Ok(aux);
             }
             else
             {
-                return NotFound(aux);
+                return BadRequest("Não foi possível atualizar usuário ou não encontrado");
             }                      
         }
 
 
         [HttpDelete("Delete")]
-        [Authorize(Policy = "Admin")]
-        public async Task<ActionResult<UsuarioPrintDTO>> DeleteUser(string id)
+        [Authorize(Policy = "Super")]
+        public async Task<IActionResult> DeleteUser(string id)
         {
             
             var aux = await _us.DeleteUsers(id);
 
-            if( aux != null)
+            if( aux is true)
             {
                 return Ok(aux);
             }
             else
             {
-                return NotFound(aux);
+                return BadRequest($"Não foi possível deletar o usuário com id: {id} ou não encontrado");
             }                       
+        }
+
+
+        [Authorize(Policy = "User")]
+        [HttpPost("TrocarSenha")]
+        public async Task<IActionResult> ChangePass(string email, UsuarioSenhaDTO user)
+        {
+            var aux = await _us.UpdateSenha(email, user);
+
+            if (aux is true)
+            {
+                return Ok("Senha Atualizada com sucesso");
+            }
+            else
+            {
+                return BadRequest("Não foi possível realizar a troca de senha");
+            }
+        }
+
+
+        [Authorize(Policy = "Super")]
+        [HttpGet("ShowUsers&Roles")]
+        public async Task<IActionResult> ShowUserRole()
+        {
+            return Ok(await _us.ShowUsersRoles());
         }
     }
 }

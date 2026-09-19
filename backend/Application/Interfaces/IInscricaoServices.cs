@@ -10,6 +10,6 @@ namespace Application.Interfaces
     public interface IInscricaoServices
     {
         public Task<ICollection<InscricaoDTO>> GetAll();
-        public Task<InscricaoDTO> Delete(int id);
+        public Task<bool> Delete(int id);
     }
 }

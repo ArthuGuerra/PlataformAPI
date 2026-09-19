@@ -31,12 +31,7 @@ namespace Plataforma_Front.Controllers
         public async Task<IActionResult> Index()
         {
             
-            var aux = await _ins.ShowMyIncricoes(ObterTokenJWT());
-            
-            if(aux == null)
-            {
-                return View("Error");
-            }
+            var aux = await _ins.ShowMyIncricoes(ObterTokenJWT());                       
 
             return View(aux);
         }

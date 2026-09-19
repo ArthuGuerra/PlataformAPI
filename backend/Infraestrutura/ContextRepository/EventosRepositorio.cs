@@ -4,6 +4,8 @@ using Infraestrutura.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Runtime.Intrinsics.Arm;
+using System.Runtime.Intrinsics.X86;
 using System.Text;
 
 namespace Infraestrutura.ContextRepository
@@ -20,7 +22,16 @@ namespace Infraestrutura.ContextRepository
 
         public async Task<ICollection<Evento>> GetEventoInscricao()
         {
-            return await _context.Evento.Include(x => x.Inscricoes).ToListAsync();
+            var aux = await _context.Evento.Include(x => x.Inscricoes).ToListAsync();
+
+            if (string.IsNullOrEmpty(aux.ToString()))
+            {
+                return [];
+            }
+            else
+            {
+                return aux;
+            }
         }
 
 
@@ -31,9 +42,73 @@ namespace Infraestrutura.ContextRepository
 
             var aux = await _context.Evento.FirstOrDefaultAsync(x => x.Nome == nome);
 
-            return aux;
+            if (aux != null)
+            {
+                return aux;
+            }
+            else
+            {
+                return null;
+            }
 
-        }   
+        }
+
+
+        public async Task<bool> UpdateADM(int id, double preco, int quantidade)
+        {
+            var eve = await _context.Evento.FirstOrDefaultAsync(x => x.Id == id);
+
+            if(eve != null)
+            {
+                eve.QuantidadeDeKitsDisponiveis = quantidade;
+                eve.Preco = preco;
+
+                await _context.SaveChangesAsync();
+
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+                      
+        }
+
+
+        public async Task<bool> FazerInscricao(int id, Inscricao ins)
+        {
+            var evento = await _context.Evento.FirstOrDefaultAsync(x => x.Id == id);
+
+            if (evento == null) return false;
+
+
+            var existe = await _context.Inscricao.AnyAsync(x =>
+                    x.EventoId == ins.EventoId &&
+                    x.UsuarioId == ins.UsuarioId);
+
+            if (existe) return false;
+
+            if (evento.QuantidadeDeKitsDisponiveis <= 0)
+            {
+                return false;
+            }
+
+
+            ins.DataDeInscricao = DateTime.UtcNow;
+
+            _context.Inscricao.Add(ins);
+
+            evento.QuantidadeDeKitsDisponiveis--;
+
+            evento.Inscricoes.Add(ins);
+
+            await _context.SaveChangesAsync();
+
+            return true;                                        
+
+
+        }
+     
     }
 }
 

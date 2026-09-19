@@ -87,7 +87,7 @@ namespace Plataforma_Front.Controllers
 
         [HttpPost]
         [Authorize(Roles = "User,Admin")]
-        public async Task<IActionResult>FazerInscricaoPOST(EventoInscricaoViewModel model)
+        public async Task<IActionResult>FazerInscricaoPOST(int id, EventoInscricaoViewModel model)
         {
 
             var token = Request.Cookies["X-Access-Token"];
@@ -110,15 +110,14 @@ namespace Plataforma_Front.Controllers
                 {
                     UsuarioId = userId,
                     EventoId = model.Evento.Id,
-                    NomeEvento = model.Evento.Nome,
-                    QuantidadeKit = model.Inscricao.QuantidadeKit,
+                    NomeEvento = model.Evento.Nome,                    
                     QuantidadeKm = model.Inscricao.QuantidadeKm,
                     TamanhoCamisa = model.Inscricao.TamanhoCamisa,
                     Genero = model.Inscricao.Genero
                     
                 };
 
-                await _evento.FazerInscricaoService(dto, ObterTokenJWT());
+                await _evento.FazerInscricaoService(id, dto, ObterTokenJWT());
 
                 return RedirectToAction("Index", "Inscricao");
             }        

@@ -7,6 +7,6 @@ namespace Infraestrutura.Interfaces
 {
     public interface IInscricaoRepository : IRepository<Inscricao>
     {
-        //public Task<ICollection<Inscricao>> Get();
+        
     }
 }

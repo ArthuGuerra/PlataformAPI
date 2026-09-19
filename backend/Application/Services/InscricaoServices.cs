@@ -3,6 +3,7 @@ using Application.Interfaces;
 using AutoMapper;
 using Domain.Entities;
 using Infraestrutura.Interfaces;
+using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -13,11 +14,12 @@ namespace Application.Services
     {
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _api;
+ 
 
         public InscricaoServices(IMapper mapper, IUnitOfWork api)
         {
             _mapper = mapper;
-            _api = api;
+            _api = api;            
         }
 
 
@@ -25,25 +27,45 @@ namespace Application.Services
         {
             var aux = await _api.InscricaoRepository.GetAllAsync();
 
-            return _mapper.Map<ICollection<InscricaoDTO>>(aux);               
+            if(aux.Count == 0)
+            {
+                return [];
+            }
+            else
+            {               
+                return _mapper.Map<ICollection<InscricaoDTO>>(aux);
+            }
 
         }
 
 
-        public async Task<InscricaoDTO> Delete(int id)
+        
+        public async Task<bool> Delete(int id)
         {
             var aux = await _api.InscricaoRepository.GetIdAsync(id);
 
-            var ev = await _api.EventosRepository.GetIdAsync(aux.EventoId);
+            if(aux != null)
+            {
 
-            ev.QuantidadeDeKitsDisponiveis++;          
+                var ev = await _api.EventosRepository.GetIdAsync(aux.EventoId);
 
-                        
-             _api.InscricaoRepository.Delete(aux);
+                ev.QuantidadeDeKitsDisponiveis++;
 
-            await _api.Commit();
+                _api.InscricaoRepository.Delete(aux);
 
-            return _mapper.Map<InscricaoDTO>(aux);
+                await _api.Commit();
+                
+                return true;
+            }
+            else
+            {                
+                return false;
+            }
+
         }
+
+
+
+
     }
 }

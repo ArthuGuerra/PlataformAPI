@@ -16,14 +16,13 @@ namespace Application.Services
     {
         private readonly IUnitOfWork _api;
         private readonly IMapper _mapper;
-        private readonly IInscricaoServices _ins;
+        
 
 
-        public EventosServices(IUnitOfWork api, IMapper mapper, IInscricaoServices ins)
+        public EventosServices(IUnitOfWork api, IMapper mapper)
         {
             _api = api;
-            _mapper = mapper;
-            _ins = ins;  
+            _mapper = mapper;             
         }
 
 
@@ -32,8 +31,14 @@ namespace Application.Services
         {    
             var aux = await _api.EventosRepository.GetAllAsync();
 
-            return _mapper.Map<ICollection<EventoDTO>>(aux);
-                           
+            if (aux.Count == 0)
+            {
+                return [];
+            }
+            else
+            {
+                return _mapper.Map<ICollection<EventoDTO>>(aux);
+            }
         }
 
 
@@ -41,8 +46,14 @@ namespace Application.Services
         {
             var aux = await _api.EventosRepository.GetIdAsync(id);
 
-            return _mapper.Map<EventoDTO>(aux);        
-
+            if(aux != null)
+            {
+                return _mapper.Map<EventoDTO>(aux);
+            }
+            else
+            {
+                return null;
+            }
         }
 
 
@@ -50,12 +61,20 @@ namespace Application.Services
         {
             var aux = await _api.EventosRepository.GetEventoNome(nome);
 
-            return _mapper.Map<EventoDTO>(aux);
-         
+            if(aux != null)
+            {
+                return _mapper.Map<EventoDTO>(aux);
+            }
+            else
+            {
+                return null;
+            }
+
+
         }
 
 
-        public async Task<string> CreateEvento(EventoDTO evento)
+        public async Task<bool> CreateEvento(EventoDTO evento)
         {
 
             var ev = await _api.EventosRepository.GetAllAsync();
@@ -66,7 +85,7 @@ namespace Application.Services
 
             if(existe)
             {
-                return null;
+                return false;
             }
             else
             {
@@ -76,39 +95,20 @@ namespace Application.Services
 
                 await _api.Commit();
 
-                return $"Evento: '{evento.Nome}' criado.";
+                return true;
             }                                      
         }
 
 
 
-        public async Task<string> AtualizarEventoADM(int id, CreateEventoDTO dto) 
+        public async Task<bool> AtualizarEventoADM(int id, CreateEventoDTO dto) 
         {
-            var aux = await _api.EventosRepository.GetIdAsync(id); 
-            
-            if(aux != null)
-            {
-                aux.Preco = dto.Preco;
-                aux.QuantidadeDeKitsDisponiveis = dto.QuantidadeDeKitsDisponiveis;
-
-
-                _api.EventosRepository.Update(aux);
-
-                await _api.Commit();
-
-                return "Atualização do evento concluída";
-            }
-            else
-            {
-                return $"Evento {id} nao encontrado";
-            }
+            return await _api.EventosRepository.UpdateADM(id,dto.Preco,dto.QuantidadeDeKitsDisponiveis);
         }
-
-
 
         
 
-        public async Task<EventoDTO> AtualizarEvento(int id, EventoDTO dto)
+        public async Task<bool> AtualizarEvento(int id, EventoDTO dto)
         {
 
             var aux = await _api.EventosRepository.GetIdAsync(id);
@@ -121,20 +121,26 @@ namespace Application.Services
                 aux.Descricao = dto.Descricao;
                 aux.Nome = dto.Nome;
                 aux.LocalEvento = dto.LocalEvento;
+
+                _api.EventosRepository.Update(aux);
+
+                await _api.Commit();
+
+                return true;
             }
-            
+            else
+            {
+                return false;
 
-            _api.EventosRepository.Update(aux);
+            }
 
-            await _api.Commit();
 
-            return _mapper.Map<EventoDTO>(aux);
         }     
 
 
 
 
-        public async Task<EventoDTO> DeletarEventos(int id)
+        public async Task<bool> DeletarEventos(int id)
         {
             var aux = await _api.EventosRepository.GetIdAsync(id);
          
@@ -143,11 +149,11 @@ namespace Application.Services
                 _api.EventosRepository.Delete(aux);
                 await _api.Commit();
 
-                return _mapper.Map<EventoDTO>(aux);
+                return true;
             }
             else
             {
-                return null;
+                return false;
             }
                    
 
@@ -156,49 +162,30 @@ namespace Application.Services
 
 
 
-        public async Task<InscricaoDTO> Inscrição(InscricaoDTO dto)
+        public async Task<bool> Inscricao(int id, InscricaoDTO dto)
         {
-            var aux = await _api.EventosRepository.GetIdAsync(dto.EventoId!);
+
+            var map = _mapper.Map<Inscricao>(dto);
+
+            return await _api.EventosRepository.FazerInscricao(id, map);
+                                                      
+        }
 
 
-            if (aux == null)
+        public async Task<ICollection<Evento>> EventoInscricao()
+        {
+            var aux = await _api.EventosRepository.GetEventoInscricao();
+
+            if (aux.Count == 0)
             {
-                return null;
-            }
-            
-            var inscricao = _mapper.Map<Inscricao>(dto);                       
-           
-            var inscricoes = await _ins.GetAll();
-
-            var existe = inscricoes.Any(x => 
-            x.EventoId ==  dto.EventoId && 
-            x.UsuarioId == dto.UsuarioId);            
-
-            if(existe)
-            {
-                return null;
+                return [];
             }
             else
             {
-               
-                if(dto.QuantidadeKit == 1)
-                {
-                   aux.QuantidadeDeKitsDisponiveis--;
-                }
-                else
-                {
-                    dto.TamanhoCamisa = null;                                      
-                }
-                
-                inscricao.DataDeInscricaoDousuario = DateTime.UtcNow;
-
-                _api.InscricaoRepository.Create(inscricao);
-
-                await _api.Commit();
-
-                return _mapper.Map<InscricaoDTO>(inscricao);
-            }                                 
+                return aux;
+            }
         }
+
 
 
         public string NormalizeNome(string nome)
@@ -208,19 +195,6 @@ namespace Application.Services
                 .ToLower()
                 .Split(' ', StringSplitOptions.RemoveEmptyEntries));       
         }
-
-        public async Task<ICollection<Evento>> EventoInscricao()
-        {
-            var aux = await _api.EventosRepository.GetEventoInscricao();
-
-            if(aux == null)
-            {
-                return null;
-            }
-            else
-            {
-                return aux;
-            }
-        }
+        
     }
 }

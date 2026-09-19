@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="APISolution/APISolution.csproj" />
+  <Project Path="ApiTest/ApiTest.csproj" Id="2cd8d3f5-1db5-411c-b16d-06e38369086f" />
   <Project Path="Application/Application.csproj" Id="d9699d92-231d-43dd-b531-9c62fa747d2a" />
   <Project Path="Domain/Domain.csproj" Id="367a8613-908d-4ad3-8795-b35ff321e6a7" />
   <Project Path="Infraestrutura/Infraestrutura.csproj" Id="c8b7e94c-a480-4280-80cc-496c72e39cbc" />

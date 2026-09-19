@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using System.Collections.ObjectModel;
 
 namespace APISolution.Controllers
 {
@@ -26,18 +27,10 @@ namespace APISolution.Controllers
 
 
         [HttpGet("EventosDTO")]
-        public async Task<ActionResult<EventoDTO>> GetAll()
-        {           
-            var aux = await _es.ListarEventos();
-
-            if (aux != null)
-            {
-                return Ok(aux);
-            }
-            else
-            {
-                return NotFound();
-            }           
+        public async Task<ActionResult<Collection<EventoDTO>>> GetAll()
+        {                                   
+            return Ok(await _es.ListarEventos());
+                   
         }
 
 
@@ -45,7 +38,7 @@ namespace APISolution.Controllers
 
         [HttpGet("{id}")]
         [Authorize(Policy ="Admin")]
-        public async Task<ActionResult<EventoDTO>> GetId (int id)
+        public async Task<IActionResult> GetId (int id)
         {           
             var aux = await _es.GetEventoId(id);
 
@@ -55,13 +48,13 @@ namespace APISolution.Controllers
             }
             else
             {
-                return NotFound(id);
+                return NotFound($"Não foi possível localizar evento com id: {id}");
             }             
         }
 
 
         [HttpGet("GetNome")]
-        public async Task<ActionResult<EventoDTO>> GetNome(string nome)
+        public async Task<IActionResult> GetNome(string nome)
         {
            
             var aux = await _es.GetEventoNomes(nome);
@@ -72,19 +65,19 @@ namespace APISolution.Controllers
             }
             else
             {
-                return NotFound(nome);
+                return NotFound($"Não foi possível localizar o evento: {nome}");
             }                        
         }
 
 
         [HttpPost("CreateEvento")]
         [Authorize(Policy = "Admin")]
-        public async Task<ActionResult<EventoDTO>> CreateEventos(EventoDTO evento)
+        public async Task<IActionResult> CreateEventos(EventoDTO evento)
         {
             
             var aux = await _es.CreateEvento(evento);
 
-            if(aux != null)
+            if(aux is true)
             {
                 return Ok(aux);                                               
             }
@@ -97,93 +90,84 @@ namespace APISolution.Controllers
 
         [HttpPatch("UpdateADM")]
         [Authorize(Policy = "Admin")]
-        public async Task<ActionResult<EventoDTO>> UpdateADM(int id, CreateEventoDTO dto)
+        public async Task<IActionResult> UpdateADM(int id, CreateEventoDTO dto)
         {
            
             var aux = await _es.AtualizarEventoADM(id, dto);
 
-            if(aux != null)
+            if (aux is true)
             {
                 return Ok(aux);
             }
             else
             {
-                return BadRequest(aux);
+                return BadRequest("Não foi possível atualizar evento ADM");
             }                      
         }
 
 
         [HttpPatch("Update")]
         [Authorize(Policy = "Admin")]
-        public async Task<ActionResult<EventoDTO>> UpdateEvento(int id, EventoDTO dto)
+        public async Task<IActionResult> UpdateEvento(int id, EventoDTO dto)
         {
             
             var aux = await _es.AtualizarEvento(id, dto);
 
-            if(aux != null)
+            if(aux is true)
             {
                 return Ok(aux);
             }
             else
             {
-                return BadRequest(aux);
-            }                       
+                return BadRequest("Não foi possível atualizar evento");
+
+            }
         }
 
 
 
         [HttpDelete("Delete")]
         [Authorize(Policy = "Admin")]
-        public async Task<ActionResult<EventoDTO>> DeleteEvento(int id)
+        public async Task<IActionResult> DeleteEvento(int id)
         {  
             
             var aux = await _es.DeletarEventos(id);
 
-            if (aux != null)
+            if (aux is true)
             {
                 return Ok(aux);
             }
             else
             {
-                return NotFound(aux);
+                return NotFound("Não foi possível deletar o evento");
             }                        
         }
 
 
 
-        [HttpPatch("Inscricao")]
+        [HttpPatch("Inscricao/{id}")]
         [Authorize(Policy = "User")]
-        public async Task<ActionResult<EventoDTO>> FazerInscricao(InscricaoDTO dto)
+        public async Task<IActionResult> FazerInscricao(int id, InscricaoDTO dto)
         {
            
-            var aux = await _es.Inscrição(dto);
+            var aux = await _es.Inscricao(id, dto);
 
-            if (aux != null)
+            if (aux)
             {
                 return Ok(aux);
             }
             else
             {
-                return BadRequest(aux);
-            }                       
+                return BadRequest($"Não foi possível realizar a inscrião no evento {dto.NomeEvento}");
+            }
         }
 
 
         [HttpGet("EventosInscricoes")]
         [Authorize(Policy = "Admin")]
         public async Task<ActionResult<ICollection<Evento>>> EventoInscricoes()
-        {
-           
-            var aux = await _es.EventoInscricao();
-
-            if(aux != null)
-            {
-                return Ok(aux);
-            }
-            else
-            {
-                return NotFound(aux);
-            }            
+        {                       
+            return Ok(await _es.EventoInscricao());                     
         }
     }
 }

@@ -1,101 +1,161 @@
-﻿@using Application.DataTransferObject;
+﻿@using Application.DataTransferObject
+@model IEnumerable<InscricaoDTO>
 
-@model IEnumerable<InscricaoDTO>;
 
+@section Styles
+{
+    <link href="~/css/inscricao.css" rel="stylesheet" />
+}
 
-<div id="carouselEventos" class="carousel slide" data-bs-ride="carousel">
+<div class="container py-5">
 
-    <div class="carousel-inner">
+    <!-- Cabeçalho -->
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center mb-5">
+        <div>
+            <h2 class="fw-bold mb-2">Minhas Inscrições</h2>
+            <p class="text-muted mb-0">Aqui estão todas as suas inscrições realizadas.</p>
+        </div>
 
-        @{
-            bool primeiro = true; 
-        }
+        <!-- Ilustração (opcional - pode remover se não tiver a imagem) -->
+        <div class="d-none d-lg-block">
+            <i class="fa-solid fa-person-running"></i>
+        </div>
+    </div>
 
-        <h2 class="text-center">Minhas Inscrições</h2>
-        
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5">
+            <p class="fw-bold">Você ainda não possui nenhuma inscrição.</p>
+        </div>
+    }
+    else
+    {
+        <div id="carouselInscricoes" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-inner">
 
-        @foreach (var item in Model)
-        {                      
+                @{
+                    var inscricoes = Model.ToList();
+                    int total = inscricoes.Count;
+                    // Mostra 3 cards por slide
+                    int cardsPorSlide = 3;
+                    int totalSlides = (int)Math.Ceiling((double)total / cardsPorSlide);
+                }
 
-            <div class="carousel-item @(primeiro ? "active" : "")">
+                @for (int slide = 0; slide < totalSlides; slide++)
+                {
+                    <div class="carousel-item @(slide == 0 ? "active" : "")">
+                        <div class="row g-4 justify-content-center">
 
-                <div class="text-center">
-                   
-                    <div class="row">
-                        <div class="col-12">
-                              
-                            <h4 style="color: darkgreen">@item.NomeEvento</h4>
-
-                            <p>
-                                <strong>Quantidade de Kits:</strong>
-                                @item.QuantidadeKit;
-                            </p>
-                            <p>
-                                <strong>Quantidade de Quilômetro:</strong>
-                                @item.QuantidadeKm
-                            </p>
-                            <p>
-                                <strong>Gênero:</strong>
-                                @item.Genero
-                            </p>
-
-                            @if (item.QuantidadeKit == 1)
+                            @for (int i = 0; i < cardsPorSlide; i++)
                             {
-                                <p>
-                                    <strong>Tamanho da Camisa:</strong>
-                                    @item.TamanhoCamisa
-                                </p>
-                               
+                                int index = slide * cardsPorSlide + i;
+                                if (index >= total) { break; }
+
+                                var item = inscricoes[index];
+
+                                <div class="col-12 col-md-6 col-lg-4">
+                                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                                        <div class="card-body p-4">
+
+                                            <!-- Cabeçalho do Card -->
+                                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <div class="rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center"
+                                                         style="width: 42px; height: 42px;">
+                                                        <i class="fa-solid fa-trophy text-success"></i>
+                                                    </div>
+                                                    <h5 class="mb-0 fw-bold text-success">
+                                                        @item.NomeEvento
+                                                    </h5>
+                                                </div>
+
+                                              
+                                            </div>
+
+                                            <!-- Informações -->
+                                            <div class="mb-4">
+                                                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                                                    <div class="d-flex align-items-center gap-2 text-muted">
+                                                        <i class="fa-solid fa-route"></i>
+                                                        <span>Quantidade de Quilômetro</span>
+                                                    </div>
+                                                    <strong>@item.QuantidadeKm km</strong>
+                                                </div>
+
+                                                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                                                    <div class="d-flex align-items-center gap-2 text-muted">
+                                                        <i class="fa-solid fa-venus-mars"></i>
+                                                        <span>Gênero</span>
+                                                    </div>
+                                                    <strong>@item.Genero</strong>
+                                                </div>
+
+                                                <div class="d-flex justify-content-between align-items-center py-2">
+                                                    <div class="d-flex align-items-center gap-2 text-muted">
+                                                        <i class="fa-solid fa-shirt"></i>
+                                                        <span>Tamanho da Camisa</span>
+                                                    </div>
+                                                    <strong>@item.TamanhoCamisa</strong>
+                                                </div>
+
+                                                <div class="d-flex justify-content-between align-items-center py-2">
+                                                    <div class="d-flex align-items-center gap-2 text-muted">
+                                                        <i class="fa-solid fa-calendar"></i>
+                                                        <span>Data de Inscrição</span>
+                                                    </div>
+                                                    <strong>@item.DataDeInscricao.ToString("dd/MM/yyyy")</strong>
+                                                </div>
+                                            </div>
+
+                                            <!-- Botão Apagar -->
+                                            <form asp-action="DeleteInscricao" method="post">
+                                                <input type="hidden" name="Id" value="@item.Id" />
+                                                @Html.AntiForgeryToken()
+
+                                                <button type="submit"
+                                                        class="btn btn-outline-danger w-100 rounded-3 py-2"
+                                                        onclick="return confirm('Tem certeza que deseja apagar esta inscrição?')">
+                                                    <i class="fa-solid fa-trash-can me-1"></i>
+                                                    Apagar Inscrição
+                                                </button>
+                                            </form>
+
+                                        </div>
+                                    </div>
+                                </div>
                             }
+
                         </div>
-                 
-
-                      
-                        <div class="text-center">
-
-                            <form asp-action="DeleteInscricao" method="post">
-                                
-                                <input type="hidden"
-                                        name="Id"
-                                        value="@item.Id" />                                
-
-                                <button type="submit" class="btn btn-primary">
-                                    Apagar Inscrição
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </button>                                
-
-                            </form>
-                        </div>
-
-
                     </div>
-
-                </div>
+                }
 
             </div>
 
-            primeiro = false;
-        }
+            <!-- Controles -->
+            @if (totalSlides > 1)
+            {
+                <button class="carousel-control-prev" type="button" data-bs-target="#carouselInscricoes" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon bg-dark rounded-circle p-3" aria-hidden="true"></span>
+                    <span class="visually-hidden">Anterior</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#carouselInscricoes" data-bs-slide="next">
+                    <span class="carousel-control-next-icon bg-dark rounded-circle p-3" aria-hidden="true"></span>
+                    <span class="visually-hidden">Próximo</span>
+                </button>
 
-    </div>
-
-    <button class="carousel-control-prev"
-            type="button"
-            data-bs-target="#carouselEventos"
-            data-bs-slide="prev">
-
-        <span class="carousel-control-prev-icon"></span>
-
-    </button>
-
-    <button class="carousel-control-next"
-            type="button"
-            data-bs-target="#carouselEventos"
-            data-bs-slide="next">
-
-        <span class="carousel-control-next-icon"></span>
-
-    </button>
-
+                <!-- Indicadores (bolinhas) -->
+                <div class="carousel-indicators position-relative mt-4">
+                    @for (int s = 0; s < totalSlides; s++)
+                    {
+                        <button type="button"
+                                data-bs-target="#carouselInscricoes"
+                                data-bs-slide-to="@s"
+                                class="@(s == 0 ? "active" : "") bg-primary"
+                                aria-current="@(s == 0 ? "true" : "false")"
+                                aria-label="Slide @(s + 1)"></button>
+                    }
+                </div>
+            }
+        </div>
+    }
 </div>
-

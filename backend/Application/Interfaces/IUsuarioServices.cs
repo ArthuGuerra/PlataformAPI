@@ -1,4 +1,5 @@
 ﻿using Application.DataTransferObject;
+using Application.DataTransferObject.IdentityDTO;
 using Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -11,9 +12,12 @@ namespace Application.Interfaces
         public Task<ICollection<UsuarioPrintDTO>> GetAllUsers();
         public Task<UsuarioPrintDTO> GetIdUsuario(string id);
         public Task<UsuarioPrintDTO> GetNomeUsers(string nome);
-        public Task<UsuarioPrintDTO> UpdateUsers(string id, UsuarioPrintDTO dto);
-        public Task<UsuarioPrintDTO> DeleteUsers(string id);
-        public Task<UsuarioPrintDTO> UpdateSenha (string id, UsuarioSenhaDTO dto);
+        public Task<bool> UpdateUsers(string id, UsuarioPrintDTO dto);
+        public Task<bool> DeleteUsers(string id);
+        public Task<bool> UpdateSenha (string id, UsuarioSenhaDTO dto);
+        public Task<ICollection<UserRolesDTO>> ShowUsersRoles();
+
+
         public string NormalizeNome(string nome);
 
         public Task<ICollection<Usuario>> UsuarioInscricao();

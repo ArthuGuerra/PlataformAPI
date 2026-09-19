@@ -1,14 +1,18 @@
-﻿@using Plataforma_Front.ViewModels;
+﻿@using Application.DataTransferObject
+@using Domain.Entities
+@using Plataforma_Front.ViewModels;
+
+@section Styles 
+{
+    <link href="~/css/getnome.css" rel="stylesheet" />
+}
 
 @model EventoInscricaoViewModel
-
-
 
 
 <h2>Procurar Evento</h2>
 <hr />
 <hr />
-
 
 
 <form asp-action="ProcurarNome" method="get">
@@ -18,140 +22,285 @@
                class="form-control"
                placeholder="Nome do Evento"
                required
-               name="nome"/>
-               
+               name="nome" />
+
         <button type="submit" class="btn btn-primary">
             Buscar
         </button>
     </div>
-
+    
 </form>
-
 
 
 @if(Model != null)
 {
+        
+    var evento = new Evento
+    {
+        Id = Model.Evento.Id,
+        Nome = Model.Evento.Nome,
+        Descricao = Model.Evento.Descricao,
+        Imagem = Model.Evento.Imagem,
+        DataEvento = Model.Evento.DataEvento,
+        LocalEvento = Model.Evento.LocalEvento,        
 
-    <div class="text-center">
-        <p>
-            <img src="@Model.Evento.Imagem"
-                 class="d-block w-100 img-fluid"
-                 alt="@Model.Evento.Nome">
-        </p>
+    };
 
-        <hr />
-        <hr />
 
-        <p>
-            <strong><h2>@Model.Evento.Nome</h2></strong>
-           
-        </p>
+<div class="container py-5">
 
-        <p>
-            <strong>Descrição:</strong>
-            @Model.Evento.Descricao
-        </p>
-        <p>
-            <strong>Local:</strong>
-            @Model.Evento.LocalEvento
-        </p>
-        <p>
-            <strong>Data do evento:</strong>
-            @Model.Evento.DataEvento.ToString("dd/MM/yyyy")
-        </p>
+    <!-- CARD PRINCIPAL -->
+    <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+        <div class="row g-0">
 
+            <!-- IMAGEM -->
+            <div class="col-12 col-lg-5">
+                <img src="@Model.Evento.Imagem"
+                     class="img-fluid w-100 h-75 object-fit-cover"
+                     alt="@Model.Evento.Nome"
+                     style="min-height: 320px; object-fit: cover;">
+            </div>
+
+            <!-- INFORMAÇÕES -->
+            <div class="col-12 col-lg-7">
+                <div class="p-4 p-lg-5">
+
+                    <!-- STATUS -->
+                    <div class="mb-3">
+                        <span class="badge bg-success rounded-pill">
+                            Evento confirmado
+                        </span>
+                    </div>
+
+                    <!-- TÍTULO -->
+                    <h3 class="fw-bold mb-3">
+                        @Model.Evento.Nome
+                    </h3>
+
+                    <!-- DESCRIÇÃO -->
+                    <p class="lead mb-4">
+                        @Model.Evento.Descricao
+                    </p>
+
+                    <!-- INFORMAÇÕES DO EVENTO -->
+                    <div class="row g-3 mb-4">
+                        <!-- LOCAL -->
+                        <div class="col-12 col-md-4">
+                            <div class="border rounded-4 p-3 h-100">
+                                <div class="fw-bold color">
+                                    <i class="fa-solid fa-location-dot"></i>
+                                    Local
+                                </div>
+                                <div>@Model.Evento.LocalEvento</div>
+                            </div>
+                        </div>
+
+                        <!-- DATA -->
+                        <div class="col-12 col-md-4">
+                            <div class="border rounded-4 p-3 h-100">
+                                <div class="fw-bold color">
+                                    <i class="fa-solid fa-calendar"></i>
+                                    Data do evento
+                                </div>
+                                <div>@Model.Evento.DataEvento.ToString("dd/MM/yyyy")</div>
+                            </div>
+                        </div>
+
+                        <!-- HORÁRIO -->
+                        <div class="col-12 col-md-4">
+                            <div class="border rounded-4 p-3 h-100">
+                                <div class="fw-bold color">
+                                    <i class="fa-solid fa-clock"></i>
+                                    Horário
+                                </div>
+                                <div>
+                                    @Model.Evento.DataEvento.ToShortTimeString()
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- BOTÕES -->
+                    <div class="row g-2">
+
+                        <!-- FAZER INSCRIÇÃO -->
+                        <div class="col-12 col-sm-6 col-xl-3">
+                            <button class="btn btn-primary w-100 py-3"
+                                    type="button"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#CollapseInscricao_@Model"
+                                    aria-expanded="false"
+                                    aria-controls="CollapseInscricao"
+                                    onclick="event.stopPropagation()">
+                                Fazer Inscrição
+                                <i class="fa-regular fa-pen-to-square ms-1"></i>
+                            </button>
+
+                            <div class="d-flex justify-content-center" style="min-height: 120px;">
+                                <div class="collapse collapse-horizontal" id="CollapseInscricao_@Model">
+                                    <div class="card card-body" style="width: 300px;">
+                                        <partial name="_PartialInscricao" model="Model" />
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        @if (User.IsInRole("SuperAdmin"))
+                        {
+                            <!-- DELETAR EVENTO -->
+                            <div class="col-12 col-sm-6 col-xl-3">
+                                <form asp-action="DeleteEE" method="post" class="w-100">
+                                    <input type="hidden" name="id" value="@Model.Evento.Id" />
+                                    @Html.AntiForgeryToken()
+                                    <button class="btn btn-danger w-100 py-3" type="submit">
+                                        Deletar Evento
+                                        <i class="fa-regular fa-trash-can ms-1"></i>
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- ATUALIZAR EVENTO ADM -->
+                            <div class="col-12 col-sm-6 col-xl-3">
+                                <button class="btn btn-info w-100 py-3"
+                                        type="button"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#CollapseUpdateADM"
+                                        aria-expanded="false"
+                                        aria-controls="CollapseUpdateADM_@evento.Id"
+                                        onclick="event.stopPropagation()">
+                                    Atualizar Evento ADM
+                                    <i class="fa-regular fa-pen-to-square ms-1"></i>
+                                </button>
+
+                                <div class="d-flex justify-content-center" style="min-height: 120px;">
+                                    <div class="collapse collapse-horizontal" id="CollapseUpdateADM_@evento.Id">
+                                        <div class="card card-body" style="width: 300px;">
+                                            <partial name="_PartialUpdateADM" model="evento" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ATUALIZAR EVENTO -->
+                            <div class="col-12 col-sm-6 col-xl-3">
+                                <button class="btn btn-success w-100 py-3"
+                                        type="button"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#CollapseUpdateEE_@Model.Evento.Id"
+                                        aria-expanded="false"
+                                        aria-controls="CollapseUpdateEE"
+                                        onclick="event.stopPropagation()">
+                                    Atualizar Evento
+                                    <i class="fa-regular fa-pen-to-square ms-1"></i>
+                                </button>
+                                
+                                <div class="d-flex justify-content-center" style="min-height: 120px;">
+                                    <div class="collapse collapse-horizontal" id="CollapseUpdateEE_@Model.Evento.Id">
+                                        <div class="card card-body" style="width: 300px;">
+                                            <partial name="_PartialUpdate" model="Model.Evento" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        }
+                    </div>
+
+                    <!-- COLLAPSES (formulários) -->
+                    <div class="mt-3">
+
+                        <!-- Inscrição -->
+                        <div class="collapse" id="CollapseInscricao">
+                            <div class="card card-body mt-2">
+                                <form asp-action="FazerInscricaoPOST" method="post">
+
+                                    <input type="hidden" name="id" value="@Model.Evento.Id" />
+                                    <partial name="_PartialInscricao" model="Model" />
+
+                                </form>
+                            </div>
+                        </div>
+
+                        @if (User.IsInRole("SuperAdmin"))
+                        {
+                            <!-- Update ADM -->
+                            <div class="collapse" id="CollapseUpdateADM">
+                                <div class="card card-body mt-2">
+                                    <form asp-action="UpdateADM" method="post">
+                                        <partial name="_PartialUpdateADM" model="evento" />
+                                    </form>
+                                </div>
+                            </div>
+
+                            <!-- Update EE -->
+                            <div class="collapse" id="CollapseUpdateEE">
+                                <div class="card card-body mt-2">
+                                    <form asp-action="UpdateEE" method="post">
+                                        <partial name="_PartialUpdate" model="Model.Evento" />
+                                    </form>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                </div>
+            </div>
+        </div>
     </div>
-            <form asp-action="FazerInscricaoPOST" method="post" class="text-center">
 
-            <p>
-                <button class="btn btn-primary"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#CollapseInscricao_@Model.Evento.Id" 
-                        aria-expanded="false" 
-                        aria-controls="collapseWidthExample">
-                    Fazer Inscrição
-                <i class="fa-regular fa-pen-to-square"></i>
-                </button>
-            </p>
-            <div class="d-flex justify-content-center" style="min-height: 120px;">
-            <div class="collapse collapse-horizontal" id="CollapseInscricao_@Model.Evento.Id">
-                    <div class="card card-body" style="width: 300px;">
-                        <partial name="_PartialInscricao" model="Model" />
+    <!-- BLOCO INFERIOR -->
+    <div class="card border-0 shadow-sm rounded-4 mt-4">
+        <div class="row g-0">
+            <div class="col-12 col-md-3">
+                <div class="p-4 d-flex justify-content-between">
+                    <div class="color icons">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <div>
+                        <h5 class="color">Participe</h5>
+                        <p class="mb-0">Faça sua inscrição e garanta seu lugar.</p>
                     </div>
                 </div>
             </div>
-        </form>
-
-        @if (User.IsInRole("SuperAdmin"))
-        {
-            <form asp-action="DeleteEE" method="post" class="text-center">
-               
-                <input type="hidden" name="id" value="@Model.Evento.Id" />
-
-                @Html.AntiForgeryToken();
-
-                <p>
-                    <button class="btn btn-primary"
-                            type="submit">
-                        Deletar Evento
-                        <i class="fa-regular fa-pen-to-square"></i>
-                    </button>
-                </p>
-
-            </form>
-
-        <form asp-action="UpdateADM" method="post" class="text-center">
-
-            <p>
-                <button class="btn btn-primary"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#CollapseUpdateADM_@Model.Evento.Id"
-                        aria-expanded="false"
-                        aria-controls="collapseWidthExample">
-                    Atualizar Evento ADM
-                    <i class="fa-regular fa-pen-to-square"></i>
-                </button>
-            </p>
-            <div class="d-flex justify-content-center" style="min-height: 120px;">
-                <div class="collapse collapse-horizontal" id="CollapseUpdateADM_@Model.Evento.Id">
-                    <div class="card card-body" style="width: 300px;">
-                        <partial name="_PartialUpdateADM" model="Model" />
+            <div class="col-12 col-md-3">
+                <div class="p-4 d-flex justify-content-between">
+                    <div class="color icons">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div>
+                        <h5 class="color">Segurança</h5>
+                        <p class="mb-0">Evento com estrutura e equipe de apoio.</p>
                     </div>
                 </div>
             </div>
-        </form>
-
-        <form asp-action="UpdateEE" method="post" class="text-center">
-
-            <p>
-                <button class="btn btn-primary"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#CollapseUpdateEE_@Model.Evento.Id"
-                        aria-expanded="false"
-                        aria-controls="collapseWidthExample">
-                    Atualizar Evento
-                    <i class="fa-regular fa-pen-to-square"></i>
-                </button>
-            </p>
-            <div class="d-flex justify-content-center" style="min-height: 120px;">
-                <div class="collapse collapse-horizontal" id="CollapseUpdateEE_@Model.Evento.Id">
-                    <div class="card card-body" style="width: 300px;">
-                        <partial name="_PartialUpdate" model="Model" />
+            <div class="col-12 col-md-3">
+                <div class="p-4 d-flex justify-content-between">
+                    <div class="color icons">
+                        <i class="fa-solid fa-heart"></i>
+                    </div>
+                    <div>
+                        <h5 class="color">Cultura</h5>
+                        <p class="mb-0">Arte, música e expressão em um só lugar.</p>
                     </div>
                 </div>
             </div>
-        </form>
-        }
+            <div class="col-12 col-md-3">
+                <div class="p-4 d-flex justify-content-between">
+                    <div class="color icons">
+                        <i class="fa-solid fa-share-nodes"></i>
+                    </div>
+                    <div>
+                        <h5 class="color">Compartilhe</h5>
+                        <p class="mb-0">Convide amigos e ajude a divulgar.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-
-
-       
-
+</div>
 
 }
-
-
-

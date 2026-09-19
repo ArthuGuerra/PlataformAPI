@@ -15,7 +15,7 @@ namespace Plataforma_Front.Services
         private const string apiEndpoint = "/api/v1/Evento/";
         private readonly IHttpClientFactory _client;
         private readonly JsonSerializerOptions _options;
-        private EventoDTO _eventoDTO;        
+        private EventoDTO _eventoDTO;     
         private ICollection<EventoDTO> _eventosDTO;
 
 
@@ -77,7 +77,7 @@ namespace Plataforma_Front.Services
             
         }
 
-        public async Task<bool> FazerInscricaoService(InscricaoDTO dto, string token)
+        public async Task<bool> FazerInscricaoService(int id, InscricaoDTO dto, string token)
         {
             try
             {
@@ -86,7 +86,7 @@ namespace Plataforma_Front.Services
                 PutTokenInHeaderAuthorization(token, cli);
 
                 using var response =
-                    await cli.PatchAsJsonAsync("api/v1/Evento/Inscricao", dto);
+                    await cli.PatchAsJsonAsync($"api/v1/Evento/Inscricao/{id}", dto);
 
                 return response.IsSuccessStatusCode;
             }

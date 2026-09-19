@@ -33,15 +33,15 @@ namespace Plataforma_Front.Controllers
            if(!ModelState.IsValid)
             {
                 ModelState.AddModelError(string.Empty, "Login Inválido...");
-                return View("Error");
+                return View("Login", model);
             }
 
             var result = await _auth.AutenticaUsuario(model);
 
             if(result is null)
             {
-                ModelState.AddModelError(string.Empty, "Login Inválido...");
-                return View("Error");
+                ModelState.AddModelError(string.Empty, "Usuário ou senha inválidos.");
+                return View("Login",model);
             }
 
             // armazenar o TOKEN no cookie
@@ -105,7 +105,7 @@ namespace Plataforma_Front.Controllers
             if (!ModelState.IsValid)
             {
                 ModelState.AddModelError(string.Empty, "Registro Inválido...");
-                return View("Error");
+                return View("Cadastro",model);
             }
             try
             {
@@ -117,7 +117,7 @@ namespace Plataforma_Front.Controllers
             {
                 ModelState.AddModelError(string.Empty, ex.Message);
 
-                return View("Error");
+                return View("Cadastro",model);
             }                      
         }
 

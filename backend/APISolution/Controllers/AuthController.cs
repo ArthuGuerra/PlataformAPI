@@ -67,27 +67,39 @@ namespace APISolution.Controllers
 
         [Authorize(Policy = "Super")]
         [HttpPost("AddUserToRole")]
-        public async Task<IActionResult> AdduserRole(string email, string roleName)
+        public async Task<IActionResult> AddUserRole(string email, string roleName)
         {
             var user = await _user.FindByEmailAsync(email);
 
-            if(user != null)
+            if (user != null)
             {
-                var result = await _user.AddToRoleAsync(user, roleName);
+                var exist = await _user.IsInRoleAsync(user, roleName);
 
-                if(result.Succeeded)
+                if (exist)
                 {
-                    _logger.LogInformation(1, $"Usuário com {user.Email} foi adicionado a {roleName} role ");
-                    return StatusCode(StatusCodes.Status201Created, $"Status: Success; Message: Usuário {user.Email} foi adicionado a {roleName} role");
+                    return BadRequest($"Usuario: {user.Email} já possui a role {roleName}");
                 }
                 else
                 {
-                    _logger.LogInformation(2, $"Error: Não foi possível adicionar {user.Email} a {roleName} role");
-                    return StatusCode(StatusCodes.Status400BadRequest, $"Status: Error; Message: Não foi possível adicionar {user.Email} a {roleName} role");
+                    var result = await _user.AddToRoleAsync(user, roleName);
+
+                    if (result.Succeeded)
+                    {
+                        _logger.LogInformation(1, $"Usuário: {user.Email} foi adicionado a {roleName} role");
+
+                        return StatusCode(StatusCodes.Status201Created, $"Status: Success; Message: Usuário {user.Email} foi adicionado a {user.Email} foi adicionado a {roleName} role");
+                    }
+                    else
+                    {
+                        _logger.LogInformation(2, $"Error: Não foi possível adicionar {user.Email} a {roleName} role");
+                        return StatusCode(StatusCodes.Status400BadRequest, $"Status: Error; Message: Não foi possível adicionar {user.Email} a {roleName} role");
+                    }
                 }
             }
-
-            return StatusCode(StatusCodes.Status400BadRequest, $"Status: Error; Message: Role {roleName} já existe");
+            else
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, $"Status: Error; Message: {user.Email} não foi encontrado ou nao existe.");
+            }
         }
 
 
@@ -97,6 +109,7 @@ namespace APISolution.Controllers
         {
             var user = await _user.FindByNameAsync(model.Username!);
 
+
             if (user is not null && await _user.CheckPasswordAsync(user, model.Password!))
             {
                 var userRoles = await _user.GetRolesAsync(user);
@@ -105,7 +118,7 @@ namespace APISolution.Controllers
                 {
                     new Claim(ClaimTypes.Name, user.UserName!),
                     new Claim(ClaimTypes.Email, user.Email!),
-                    new Claim("userId", user.Id!),
+                    new Claim("userId", user.Id!),          
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 };               
 
@@ -143,49 +156,52 @@ namespace APISolution.Controllers
         [HttpPost("Cadastro")]
         public async Task<IActionResult> Register(RegisterModelDTO model)
         {
-
             var userExist = await _userServices.GetAllUsers();
-
 
             var norma = _userServices.NormalizeNome(model.Username!);
             var email = _userServices.NormalizeNome(model.Email!);
 
-            var existe = userExist.Any(x => _userServices.NormalizeNome(x.UserName!) == norma);
+            var existe = userExist.Any(x =>
+                _userServices.NormalizeNome(x.UserName!) == norma);
 
-            var existeEmail = userExist.Any(x => _userServices.NormalizeNome(x.Email!) == email);
+            var existeEmail = userExist.Any(x =>
+                _userServices.NormalizeNome(x.Email!) == email);
 
-            var existeCPF = userExist.Any(x => _userServices.NormalizeNome(x.CPF) == model.CPF);
-
+            var existeCPF = userExist.Any(x =>
+                _userServices.NormalizeNome(x.CPF) == model.CPF);
 
             if (existe || existeEmail || existeCPF)
             {
                 return BadRequest("Usuario, Email ou CPF existente!");
             }
-            else
+
+            var user = new Usuario
             {
-                Usuario user = new()
-                {
-                    Email = model.Email,
-                    SecurityStamp = Guid.NewGuid().ToString(),
-                    UserName = model.Username,
-                    CPF = model.CPF,
-                    PhoneNumber = model.Telefone,                 
-                };
+                Email = model.Email,
+                SecurityStamp = Guid.NewGuid().ToString(),
+                UserName = model.Username,
+                CPF = model.CPF,
+                PhoneNumber = model.PhoneNumber
+            };
 
-                var result = await _user.CreateAsync(user, model.Password!);
-                             await _user.AddToRoleAsync(user,"User");
+            var result = await _user.CreateAsync(user, model.Password!);
 
-                if (!result.Succeeded)
-                {
-                    return StatusCode(StatusCodes.Status500InternalServerError);
-                }
-                else
-                {
-                    return Ok(result);
-                }
+            if (!result.Succeeded)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError);
             }
 
-            
+            var roleResult = await _user.AddToRoleAsync(user, "User");
+
+            if (!roleResult.Succeeded)
+            {
+                // Evita deixar um usuário criado sem a role esperada
+                await _user.DeleteAsync(user);
+
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
+
+            return Ok(result);
         }
 
 
@@ -259,16 +275,8 @@ namespace APISolution.Controllers
         [Authorize(Policy = "Super")]
         public async Task<ActionResult<ICollection<Usuario>>> ShowUsers()
         {
-            var aux = await _user.Users.ToListAsync();
+            return Ok(await _user.Users.ToListAsync());
 
-            if(aux == null)
-            {
-                return NotFound();
-            }
-            else
-            {
-                return aux;
-            }
         }
 
 
@@ -276,16 +284,7 @@ namespace APISolution.Controllers
         [Authorize(Policy = "Super")]
         public async Task<ActionResult<ICollection<IdentityRole>>> ShowRoles()
         {
-            var aux = await _role.Roles.ToListAsync();
-
-            if (aux == null)
-            {
-                return NotFound();
-            }
-            else
-            {
-                return aux;
-            }
+            return Ok(await _role.Roles.ToListAsync());            
         }
 
     }

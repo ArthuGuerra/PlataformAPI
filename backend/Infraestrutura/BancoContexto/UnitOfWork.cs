@@ -17,20 +17,9 @@ namespace Infraestrutura.BancoContexto
         private ITurmasRepository _turmas;
 
 
-        public UnitOfWork (
-            ApiContext api, 
-            IUsuariosRepository usuarios, 
-            IEventosRepository eventos, 
-            IInscricaoRepository inscricao,
-            IInscricaoAppRepository inscricaoApp,
-            ITurmasRepository turmas )
+        public UnitOfWork (ApiContext api )
         {
-            _api = api;
-            _usuarios = usuarios;
-            _eventos = eventos; 
-            _inscricao = inscricao;
-            _inscricaoApp = inscricaoApp;
-            _turmas = turmas;
+            _api = api;           
         }
 
         public IUsuariosRepository UsuariosRepository 

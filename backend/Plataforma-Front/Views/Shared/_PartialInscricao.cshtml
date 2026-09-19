@@ -11,14 +11,7 @@
         <input type="hidden" asp-for="@Model.Evento.Id"/>
         <input type="hidden" asp-for="@Model.Evento.Nome"/>
         
-        <div class="card shadow-sm p-5 mx-auto" style="max-width: 700px;">
-
-            <div class="input-group mb-3">
-                <strong>Quantidade de Kit ( 1 ou 0 )</strong>
-                <input asp-for="@Model.Inscricao.QuantidadeKit"
-                       class="form-control" 
-                       value="@Model.Inscricao.QuantidadeKit"/>
-            </div>
+        <div class="card shadow-sm p-5 mx-auto" style="max-width: 700px;">            
 
             <div class="input-group mb-3">
 
@@ -45,7 +38,7 @@
             </div>
 
             <div class="input-group mb-3">
-                <strong>Quantidade de Quilômetros</strong>
+                
                 <input asp-for="@Model.Inscricao.QuantidadeKm"
                        class="form-control"
                        placeholder="Quantidade de Quilômetros" 

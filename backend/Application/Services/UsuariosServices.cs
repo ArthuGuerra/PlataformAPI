@@ -1,4 +1,5 @@
 ﻿using Application.DataTransferObject;
+using Application.DataTransferObject.IdentityDTO;
 using Application.Interfaces;
 using AutoMapper;
 using Domain.Entities;
@@ -17,12 +18,14 @@ namespace Application.Services
         private readonly IUnitOfWork _api;
         private readonly IMapper _mapper;
         private readonly UserManager<Usuario> _user;
+        private readonly RoleManager<IdentityRole> _role;
 
-        public UsuariosServices(IUnitOfWork api, IMapper mapper, UserManager<Usuario> user)
+        public UsuariosServices(IUnitOfWork api, IMapper mapper, UserManager<Usuario> user, RoleManager<IdentityRole> role)
         {
             _api = api;
             _mapper = mapper;
             _user = user;
+            _role = role;
         }
 
 
@@ -30,16 +33,30 @@ namespace Application.Services
         {
             var aux = await _api.UsuariosRepository.GetAllAsync();
 
-            return _mapper.Map<ICollection<UsuarioPrintDTO>>(aux);
+            if(aux.Count == 0)
+            {
+                return [];
+            }
+            else
+            {
+                return _mapper.Map<ICollection<UsuarioPrintDTO>>(aux);
+            }
 
-            
         }
 
         public async Task<UsuarioPrintDTO> GetNomeUsers(string nome)
         {
             var aux = await _user.FindByNameAsync(nome);
 
-            return _mapper.Map<UsuarioPrintDTO>(aux);
+            if(aux != null)
+            {
+                return _mapper.Map<UsuarioPrintDTO>(aux);
+            }
+            else
+            {
+                return null;
+            }
+
         }
 
 
@@ -48,39 +65,56 @@ namespace Application.Services
         {
             var aux = await _user.FindByIdAsync(id);
 
-            return _mapper.Map<UsuarioPrintDTO>(aux);
-        }      
-
-
-        
-        public async Task<UsuarioPrintDTO> UpdateUsers(string id, UsuarioPrintDTO dto)
-        {
-
-            var aux = await _user.FindByIdAsync(id);
-
             if(aux != null)
             {
-                aux.UserName = dto.UserName;
-                aux.Email = dto.Email;                
+                return _mapper.Map<UsuarioPrintDTO>(aux);
             }
-
-            var result = await _user.UpdateAsync(aux);
-
-            if (!result.Succeeded)
+            else
             {
-                foreach (var erro in result.Errors)
-                {
-                    Debug.WriteLine(erro.Description);
-                }
                 return null;
             }
 
-            return _mapper.Map<UsuarioPrintDTO>(aux);
+        }
+
+
+        public async Task<bool> UpdateUsers(
+     string id,
+     UsuarioPrintDTO dto)
+        {
+            var user = await _user.FindByIdAsync(id);
+
+            if (user is null)
+            {
+                return false;
+            }
+
+            var userNameExistente = await _user.FindByNameAsync(dto.UserName);
+
+            if (userNameExistente is not null &&
+                userNameExistente.Id != user.Id)
+            {
+                return false;
+            }
+
+            var emailExistente = await _user.FindByEmailAsync(dto.Email);
+
+            if (emailExistente is not null &&
+                emailExistente.Id != user.Id)
+            {
+                return false;
+            }
+
+            user.UserName = dto.UserName;
+            user.Email = dto.Email;
+
+            var result = await _user.UpdateAsync(user);
+
+            return result.Succeeded;
         }
 
 
 
-        public async Task<UsuarioPrintDTO> DeleteUsers(string id)
+        public async Task<bool> DeleteUsers(string id)
         {
             var aux = await _user.FindByIdAsync(id);
 
@@ -88,15 +122,40 @@ namespace Application.Services
             {
                 await _user.DeleteAsync(aux);
 
-                return _mapper.Map<UsuarioPrintDTO>(aux);
+                return true;
             }
             else
             {
-                return null;
-            }           
+                return false;
+            }                              
         }
 
-       
+
+        public async Task<ICollection<UserRolesDTO>> ShowUsersRoles()
+        {
+            var aux = await _api.UsuariosRepository.GetAllAsync();
+
+            if (aux.Count == 0) return [];
+
+
+            var result = new List<UserRolesDTO>();
+
+
+            foreach (var user in aux)
+            {
+                var roles = await _user.GetRolesAsync(user);
+
+                result.Add(new UserRolesDTO
+                {
+                    UserName = user.UserName ?? string.Empty,
+                    Roles = roles
+                });
+            }
+
+            return result;
+        }
+
+
 
         public string NormalizeNome(string? nome)
         {
@@ -111,13 +170,15 @@ namespace Application.Services
                 .Split(' ', StringSplitOptions.RemoveEmptyEntries));
         }
 
+
+
         public async Task<ICollection<Usuario>> UsuarioInscricao()
         {
             var aux = await _api.UsuariosRepository.GetUsuarioInscricao();
 
-            if(aux == null)
+            if(aux.Count == 0)
             {
-                return null;
+                return [];
             }
             else
             {
@@ -125,26 +186,28 @@ namespace Application.Services
             }
         }
 
-        public async Task<UsuarioPrintDTO> UpdateSenha(string id,UsuarioSenhaDTO dto)
+        public async Task<bool> UpdateSenha(string email,UsuarioSenhaDTO dto)
         {
-            var user = await _user.FindByIdAsync(id);
+            var user = await _user.FindByEmailAsync(email);
 
-            if(user == null)
+            if(user != null)
             {
-                return null;
-            }
-            else
-            {
-
-                var result = await _user.ChangePasswordAsync(
+              
+                await _user.ChangePasswordAsync(
                     user,
                     dto.SenhaAtual,
                     dto.NewSenha
-                    );
+              );
 
-                return _mapper.Map<UsuarioPrintDTO>(dto);
-                
+                return true;
             }
-        }
+            else
+            {
+                return false;
+            }
+           
+          
+            
+        }     
     }
 }

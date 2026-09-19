@@ -14,11 +14,10 @@ namespace Application.DataTransferObject
         public int EventoId { get; set; }
         public string? NomeEvento { get; set; }   
 
-        
-        [Range(0,1)]
-        public int QuantidadeKit { get; set; }
+                
         public string? QuantidadeKm { get; set; }
         public string? TamanhoCamisa { get; set; }
         public string? Genero { get; set; }
+        public DateTime DataDeInscricao { get; set; }
     }
 }

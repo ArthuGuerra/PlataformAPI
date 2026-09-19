@@ -16,9 +16,5 @@ namespace Infraestrutura.ContextRepository
             _context = context;
         }
 
-        //public async Task<ICollection<Inscricao>> Get()
-        //{
-        //    return await _context.Inscricao.ToListAsync();
-        //}
     }
 }

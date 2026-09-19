@@ -36,7 +36,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddControllers().AddJsonOptions(options => options.JsonSerializerOptions.ReferenceHandler=ReferenceHandler.IgnoreCycles);
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+
+
+
 
 
 
@@ -53,6 +55,8 @@ builder.Services.AddCors(options =>
         .AllowAnyMethod();
     });
 });
+
+
 
 
 
@@ -79,7 +83,6 @@ builder.Services.AddApiVersioning(v =>
 var myOptions = new MyRateLimitOptions();
 
 builder.Configuration.GetSection(MyRateLimitOptions.MyRateLimit).Bind(myOptions);
-
 
 
 // rate limite global
@@ -213,7 +216,7 @@ builder.Services.AddAuthorization(options =>
         policy.RequireAssertion(context =>
         {
             string? nome = context.User.FindFirst(ClaimTypes.Name)?.Value;
-            string userId = context.User.FindFirst("userId")?.Value;
+            string? userId = context.User.FindFirst("userId")?.Value;           
 
             return (nome == "ArthurGuerra" && userId == "6e509426-cded-49da-bbf6-a7878f6930d5");
         });
@@ -243,7 +246,7 @@ builder.Services.AddSwaggerGen(c =>
     {
         Version = "v1",
         Title = "APISolution",
-        Description = "Api para plataforma de corrida e para os orgãos da ADRI, APCI e LDIF",
+        Description = "API para plataforma de corrida para o orgão da ADRI",
         TermsOfService = new Uri("https://www.youtube.com/@Dev-Guerra"),
         Contact = new OpenApiContact
         {
@@ -275,11 +278,6 @@ builder.Services.AddSwaggerGen(c =>
         [new OpenApiSecuritySchemeReference("Bearer", document)] = []
     });
 });
-
-
-
-
-
 
 
 
