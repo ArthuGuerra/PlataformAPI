@@ -18,6 +18,8 @@ namespace Domain.Entities
         }
         
         public string? CPF { get; set; }
+        public bool Ativo { get; set; } = true;
+
         public string? RefreshToken { get; set; }
         public DateTime RefreshTokenExpiryTime { get; set; }
 

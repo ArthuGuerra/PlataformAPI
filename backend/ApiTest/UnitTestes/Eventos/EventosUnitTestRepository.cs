@@ -81,6 +81,46 @@ namespace ApiTest.UnitTestes.Eventos
 
 
         [Fact]
+        [Trait("Evento", "Repository")]
+        public async Task ListarEventosAtivosRepositoryTeste()
+        {
+            // Arrange
+
+            var context = CreateContext(DatabaseType.InMemory);
+
+            var evento = _fix.Build<Evento>()
+                .Without(x => x.Inscricoes)
+                .Create();
+
+
+            await context.Evento.AddAsync(evento);
+            await context.SaveChangesAsync();
+
+
+            context.ChangeTracker.Clear();
+
+            var repo = new EventosRepositorio(context);
+
+            //Act
+
+            var result = await repo.GetEventosAtivos();
+
+
+            // Assert
+
+            Assert.NotNull(result);
+            Assert.Single(result);
+
+            var eventoRetornado = result.First();
+
+            Assert.Equal(evento.Id, eventoRetornado.Id);
+            Assert.Equal(true, eventoRetornado.Ativo);           
+
+
+        }
+
+
+        [Fact]
         [Trait("Evento","Repository")]
         public async Task GetEventoNomeRepositoryTeste()
         {

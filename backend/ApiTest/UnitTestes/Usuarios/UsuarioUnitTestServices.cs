@@ -74,6 +74,59 @@ namespace ApiTest.UnitTestes.Usuarios
         }
 
 
+
+        [Fact]
+        [Trait("Usuario", "Services")]
+        public async Task GetUsuariosAtivosListaTeste()
+        {
+            // Arrange
+            var users = _fix.Build<Usuario>()
+                .Without(x => x.Inscricoes)
+                .Without(x => x.InscricoesApp)
+                .CreateMany(20).ToList();
+
+
+            var userRepo = new Mock<IUnitOfWork>();
+            var userStore = new Mock<IUserStore<Usuario>>();
+
+            var userMan = new Mock<UserManager<Usuario>>(
+                userStore.Object,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+            );
+
+            var roleStore = new Mock<IRoleStore<IdentityRole>>();
+
+            var role = new Mock<RoleManager<IdentityRole>>(
+                roleStore.Object,
+                null,
+                null,
+                null,
+                null
+            );
+
+            userRepo.Setup(r => r.UsuariosRepository.GetAllAtivosAsync()).ReturnsAsync(users);
+
+            var services = new UsuariosServices(userRepo.Object, _mapper, userMan.Object, role.Object);
+
+
+            // Act
+
+            var result = await services.GetAtivos();
+
+            ///Assert
+
+            userRepo.Verify(r => r.UsuariosRepository.GetAllAtivosAsync(), Times.Once);
+            Assert.Equal(users.Count, result.Count);
+        }
+
+
         [Fact]
         [Trait("Usuario", "Services")]
         public async Task GetNomeUserTeste()
@@ -388,14 +441,16 @@ namespace ApiTest.UnitTestes.Usuarios
 
             userMan.Setup(u => u.FindByIdAsync(user.Id)).ReturnsAsync(user);
 
-            userMan.Setup(u => u.DeleteAsync(user)).ReturnsAsync(IdentityResult.Success);
+            user.Ativo = false;
+
+            userMan.Setup(u => u.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
 
 
             // Act
 
             var services = new UsuariosServices(userRepo.Object, _mapper, userMan.Object, role.Object);
 
-            var result = await services.DeleteUsers(user.Id);
+            var result = await services.UpdateUsers(user.Id, map);
 
 
 
@@ -403,7 +458,7 @@ namespace ApiTest.UnitTestes.Usuarios
 
             userMan.Verify(r => r.FindByIdAsync(user.Id), Times.Once());
 
-            userMan.Verify(r => r.DeleteAsync(user), Times.Once());
+            userMan.Verify(r => r.UpdateAsync(user), Times.Once());
 
             Assert.True(result);
 

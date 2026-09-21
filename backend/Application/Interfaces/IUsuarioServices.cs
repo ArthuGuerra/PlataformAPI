@@ -10,6 +10,7 @@ namespace Application.Interfaces
     public interface IUsuarioServices
     {
         public Task<ICollection<UsuarioPrintDTO>> GetAllUsers();
+        public Task<ICollection<UsuarioPrintDTO>> GetAtivos();
         public Task<UsuarioPrintDTO> GetIdUsuario(string id);
         public Task<UsuarioPrintDTO> GetNomeUsers(string nome);
         public Task<bool> UpdateUsers(string id, UsuarioPrintDTO dto);

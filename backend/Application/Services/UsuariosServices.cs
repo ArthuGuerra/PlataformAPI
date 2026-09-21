@@ -44,6 +44,21 @@ namespace Application.Services
 
         }
 
+
+        public async Task<ICollection<UsuarioPrintDTO>> GetAtivos()
+        {
+            var users = await _api.UsuariosRepository.GetAllAtivosAsync();
+
+            if (users.Count == 0)
+            {
+                return [];
+            }
+            else
+            {
+                return _mapper.Map<ICollection<UsuarioPrintDTO>>(users);
+            }
+        }
+
         public async Task<UsuarioPrintDTO> GetNomeUsers(string nome)
         {
             var aux = await _user.FindByNameAsync(nome);
@@ -77,9 +92,7 @@ namespace Application.Services
         }
 
 
-        public async Task<bool> UpdateUsers(
-     string id,
-     UsuarioPrintDTO dto)
+        public async Task<bool> UpdateUsers(string id, UsuarioPrintDTO dto)
         {
             var user = await _user.FindByIdAsync(id);
 
@@ -116,11 +129,15 @@ namespace Application.Services
 
         public async Task<bool> DeleteUsers(string id)
         {
-            var aux = await _user.FindByIdAsync(id);
+            var user = await _user.FindByIdAsync(id);
 
-            if(aux != null)
+            if(user != null)
             {
-                await _user.DeleteAsync(aux);
+                //await _user.DeleteAsync(aux);
+
+                user.Ativo = false;
+
+                await _user.UpdateAsync(user);
 
                 return true;
             }

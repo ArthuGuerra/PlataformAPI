@@ -51,26 +51,35 @@ namespace Plataforma_Front.Controllers
 
 
         [HttpGet]
-        public async Task<ActionResult> GetNome()
-        {           
+        public IActionResult GetNome()
+        {
             return View();
         }
 
 
         [HttpGet]
-        public async Task<ActionResult> ProcurarNome(string nome)
-        {            
-            if(nome == null)
+        public async Task<IActionResult> ProcurarNome(string nome)
+        {
+            if (string.IsNullOrWhiteSpace(nome))
             {
-                return View("Error");
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Informe o nome do evento."
+                );
+
+                return View("GetNome");
             }
 
             var evento = await _evento.GetEventoNome(nome);
-            if(evento == null)
+
+            if (evento == null)
             {
-                ModelState.AddModelError("", "Evento não encontrado");
-                return View("Error",new EventoInscricaoViewModel());
-                // pensar em retirar isso aqui
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Evento não encontrado. Verifique o nome informado."
+                );
+
+                return View("GetNome");
             }
 
             var vm = new EventoInscricaoViewModel
@@ -80,10 +89,9 @@ namespace Plataforma_Front.Controllers
                 User = new Usuario()
             };
 
-                return View("GetNome", vm);
+            return View("GetNome", vm);
         }
 
-        
 
         [HttpPost]
         [Authorize(Roles = "User,Admin")]

@@ -27,6 +27,14 @@ namespace APISolution.Controllers
         }
 
 
+        [HttpGet("AllUsuariosAtivos")]
+        [Authorize(Policy = "Super")]
+        public async Task<ActionResult<ICollection<UsuarioPrintDTO>>> GetUsersAtivos()
+        {
+            return Ok(await _us.GetAtivos());
+        }
+
+
         [HttpGet("UsuariosInscricoes")]
         [Authorize(Policy = "Super")]
         public async Task<ActionResult<ICollection<Usuario>>> UsuarioInscricoes()
@@ -36,7 +44,7 @@ namespace APISolution.Controllers
 
 
         [HttpGet("{id}")]
-        [Authorize(Policy = "Admin")]
+        [Authorize(Policy = "Super")]
         public async Task<IActionResult> GetId(string id)
         {
           

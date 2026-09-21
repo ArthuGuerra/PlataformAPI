@@ -20,7 +20,12 @@ namespace Infraestrutura.ContextRepository
         public async Task<ICollection<Usuario>> GetAllAsync()
         {
             return await _api.Set<Usuario>().AsNoTracking().ToListAsync();
-        }       
+        }
+
+        public async Task<ICollection<Usuario>> GetAllAtivosAsync()
+        {
+            return await _api.Usuario.AsNoTracking().Where(x => x.Ativo).ToListAsync();
+        }
 
         public async Task<ICollection<Usuario>> GetUsuarioInscricao()
         {

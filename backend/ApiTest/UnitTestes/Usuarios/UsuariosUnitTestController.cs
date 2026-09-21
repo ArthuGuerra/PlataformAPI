@@ -56,6 +56,42 @@ namespace ApiTest.UnitTestes.Usuarios
 
             Assert.Equal(usuarios, okResult.Value); 
 
+        }
+
+        [Fact]
+        [Trait("Usuario", "Controller")]
+        public async Task ListarUsuariosAtivosControllerTeste()
+        {
+            // Arrange
+            var usuarios = _fix.Build<UsuarioPrintDTO>()
+                .CreateMany(10).ToList();
+
+
+            var services = new Mock<IUsuarioServices>();
+
+            services.Setup(r => r.GetAtivos()).ReturnsAsync(usuarios);
+
+            var controller = new UsuarioController(services.Object);
+
+
+            // Act
+
+            var result = await controller.GetUsersAtivos();
+
+            // Assert
+
+            services.Verify(r => r.GetAtivos(), Times.Once());
+
+            Assert.NotNull(result);
+
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+
+            Assert.Equal(200, okResult.StatusCode);
+
+            var model = Assert.IsAssignableFrom<IEnumerable<UsuarioPrintDTO>>(okResult.Value);
+
+            Assert.Equal(usuarios, okResult.Value);
+
 
         }
 

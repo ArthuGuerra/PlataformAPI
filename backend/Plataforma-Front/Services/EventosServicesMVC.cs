@@ -35,7 +35,7 @@ namespace Plataforma_Front.Services
         {
             var cli = _client.CreateClient("APISolution");            
             
-            using(var response = await cli.GetAsync(apiEndpoint +"EventosDTO"))
+            using(var response = await cli.GetAsync(apiEndpoint + "EventosDTO/Ativos"))
             {
                 if (response.IsSuccessStatusCode)
                 {

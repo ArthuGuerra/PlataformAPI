@@ -104,21 +104,29 @@ namespace Plataforma_Front.Controllers
         {
             if (!ModelState.IsValid)
             {
-                ModelState.AddModelError(string.Empty, "Registro Inválido...");
-                return View("Cadastro",model);
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Verifique os dados informados."
+                );
+
+                return View("Cadastro", model);
             }
+
             try
             {
                 await _auth.RegisterUsuario(model);
 
                 return Redirect("/");
             }
-            catch(Exception ex)
+            catch (Exception)
             {
-                ModelState.AddModelError(string.Empty, ex.Message);
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Não foi possível realizar o cadastro. Tente novamente."
+                );
 
-                return View("Cadastro",model);
-            }                      
+                return View("Cadastro", model);
+            }
         }
 
 

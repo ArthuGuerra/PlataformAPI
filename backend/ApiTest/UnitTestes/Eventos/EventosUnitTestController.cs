@@ -59,6 +59,49 @@ namespace ApiTest.UnitTestes.Eventos
 
         }
 
+
+
+
+
+        [Fact]
+        [Trait("Evento", "Controller")]
+        public async Task ListarEventosAtivosControllerTeste()
+        {
+
+            //Arrange
+            var eventos = _fix.Build<EventoDTO>()
+               .CreateMany(5).ToList();
+
+            var eventoRepo = new Mock<IEventoServices>();
+
+            eventoRepo.Setup(r => r.EventosAtivos()).ReturnsAsync(eventos);
+
+            var controller = new EventoController(eventoRepo.Object);
+
+            // Act
+            var result = await controller.GetAtivos();
+
+            // Assert
+
+            // Assert
+            eventoRepo.Verify(r => r.EventosAtivos(), Times.Once);
+            Assert.NotNull(result);
+
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+
+            Assert.Equal(200, okResult.StatusCode);
+
+            var model = Assert.IsAssignableFrom<IEnumerable<EventoDTO>>(okResult.Value);
+
+            Assert.Equal(eventos, okResult.Value);
+
+
+        }
+
+
+
+
+
         [Fact]
         [Trait("Evento", "Controller")]
         public async Task GetIdEventosControllerTeste()

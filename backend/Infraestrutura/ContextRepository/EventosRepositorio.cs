@@ -34,6 +34,12 @@ namespace Infraestrutura.ContextRepository
             }
         }
 
+        
+        public async Task<ICollection<Evento>> GetEventosAtivos()
+        {
+            return await _context.Evento.AsNoTracking().Where(x => x.Ativo).ToListAsync();
+        }
+
 
 
 

@@ -24,6 +24,7 @@ namespace Domain.Entities
         public string? Descricao { get; set; }
         public string? LocalEvento { get; set; }
         public int QuantidadeDeKitsDisponiveis { get; set; } = 2000;
+        public bool Ativo { get; set; } = true;
 
         public ICollection<Inscricao> Inscricoes { get; set; }
 

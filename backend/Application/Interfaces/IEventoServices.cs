@@ -11,6 +11,7 @@ namespace Application.Interfaces
         public Task<bool> CreateEvento(EventoDTO evento);
         public Task<bool> AtualizarEvento(int id, EventoDTO evento);       
         public Task<ICollection<EventoDTO>> ListarEventos();
+        public Task<ICollection<EventoDTO>> EventosAtivos();
         public Task<bool> DeletarEventos(int id);
         public Task<EventoDTO> GetEventoId(int id);
 

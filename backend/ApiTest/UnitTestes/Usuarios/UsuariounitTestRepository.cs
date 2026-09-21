@@ -48,6 +48,46 @@ namespace ApiTest.UnitTestes.Usuarios
         }
 
 
+        [Fact]
+        [Trait("Usuario", "Repository")]
+        public async Task GetAllAtivosAsync_DeveRetornarTodosOsUsuariosAtivos()
+        {
+            // Arrange
+            var users = _fix.Build<Usuario>()
+                .Without(x => x.Inscricoes)
+                .Without(x => x.InscricoesApp)
+                .With(x => x.Ativo, true)
+                .CreateMany(5)
+                .ToList();
+
+            var context = CreateContext(DatabaseType.InMemory);
+
+            await context.Usuario.AddRangeAsync(users);
+            await context.SaveChangesAsync();
+
+            context.ChangeTracker.Clear();
+
+            var repo = new UsuariosRepositorio(context);
+
+            // Act
+            var result = await repo.GetAllAtivosAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(5, result.Count);
+
+            Assert.All(
+                result,
+                user => Assert.True(user.Ativo));
+
+            Assert.All(
+                users,
+                user => Assert.Contains(
+                    result,
+                    retorno => retorno.Id == user.Id));
+        }
+
+
 
         [Fact]
         [Trait("Usuario", "Repository")]

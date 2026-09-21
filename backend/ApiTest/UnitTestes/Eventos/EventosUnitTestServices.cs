@@ -56,6 +56,43 @@ namespace ApiTest.UnitTestes.Eventos
 
 
 
+
+        [Fact]
+        [Trait("Evento", "Services")]
+        public async Task ListarEventosAtivosTeste()
+        {
+            // Arrange
+            var eventos = _fix.Build<EventoDTO>()
+                .CreateMany(5).ToList();
+
+            var eventoRepo = new Mock<IUnitOfWork>();
+
+            var map = _mapper.Map<ICollection<Evento>>(eventos);
+
+
+            eventoRepo.Setup(r => r.EventosRepository.GetEventosAtivos())
+               .ReturnsAsync(map);
+
+
+            var services = new EventosServices(eventoRepo.Object, _mapper);
+
+
+            // Act
+            var result = await services.EventosAtivos();
+
+
+            // Assert            
+            eventoRepo.Verify(r => r.EventosRepository.GetEventosAtivos(), Times.Once);
+            Assert.NotNull(result);
+            Assert.Equal(eventos.Count, result.Count);
+        }
+
+
+
+
+
+
+
         [Fact]
         [Trait("Evento", "Services")]
         public async Task GetEventoIdTeste()
@@ -94,7 +131,7 @@ namespace ApiTest.UnitTestes.Eventos
 
         [Fact]
         [Trait("Evento", "Services")]
-        public async Task getEventoNomeTeste()
+        public async Task GetEventoNomeTeste()
         {
             // arrange
 
@@ -272,7 +309,9 @@ namespace ApiTest.UnitTestes.Eventos
 
             eventoRepo.Setup(r => r.EventosRepository.GetIdAsync(evento.Id)).ReturnsAsync(map);
 
-            eventoRepo.Setup(r => r.EventosRepository.Delete(It.IsAny<Evento>())).Returns(map);
+            map.Ativo = false;
+
+            eventoRepo.Setup(r => r.EventosRepository.Update(It.IsAny<Evento>())).Returns(map);
 
             eventoRepo.Setup(r => r.Commit()).Returns(Task.CompletedTask);
 
@@ -285,7 +324,7 @@ namespace ApiTest.UnitTestes.Eventos
 
             // Assert
 
-            eventoRepo.Verify(r => r.EventosRepository.Delete(map), Times.Once);
+            eventoRepo.Verify(r => r.EventosRepository.Update(map), Times.Once);
             Assert.True(result);
 
         }

@@ -41,16 +41,12 @@ builder.Services.AddControllers().AddJsonOptions(options => options.JsonSerializ
 
 
 
-
-
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("ApiPolicy", policy =>
     {
         policy.WithOrigins(
-            "https://localhost:7214",
-            "https://meusite.com",
-            "https://apirequest.io") 
+            "https://localhost:7214") 
         .AllowAnyHeader()
         .AllowAnyMethod();
     });
@@ -106,12 +102,14 @@ builder.Services.AddRateLimiter(options =>
 
 
 
+var connectionString = builder.Configuration
+    .GetConnectionString("ConexaoPadrao")
+    ?? throw new InvalidOperationException(
+        "Connection string 'ConexaoPadrao' não encontrada.");
 
-string connectionString = "Server=localhost\\SQLEXPRESS;Database=ApiContextTeste;Trusted_Connection=True;TrustServerCertificate=True";
+builder.Services.AddDbContext<ApiContext>(options =>
+    options.UseSqlServer(connectionString));
 
-string SqlServer = builder.Configuration.GetConnectionString("ConexaoPadrao");
-
-builder.Services.AddDbContext<ApiContext>(options => options.UseSqlServer(connectionString));
 
 
 
@@ -216,7 +214,7 @@ builder.Services.AddAuthorization(options =>
         policy.RequireAssertion(context =>
         {
             string? nome = context.User.FindFirst(ClaimTypes.Name)?.Value;
-            string? userId = context.User.FindFirst("userId")?.Value;           
+            string? userId = context.User.FindFirst("userId")?.Value;
 
             return (nome == "ArthurGuerra" && userId == "6e509426-cded-49da-bbf6-a7878f6930d5");
         });
@@ -318,3 +316,6 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+
+public partial class Program { }

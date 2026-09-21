@@ -41,6 +41,22 @@ namespace Application.Services
             }
         }
 
+        public async Task<ICollection<EventoDTO>> EventosAtivos()
+        {
+            var eventos = await _api.EventosRepository.GetEventosAtivos();
+
+            if(eventos.Count == 0)
+            {
+                return [];
+            }
+            else
+            {
+                return _mapper.Map<ICollection<EventoDTO>>(eventos);
+            }
+        }
+            
+
+
 
         public async Task<EventoDTO> GetEventoId(int id)
         {
@@ -146,7 +162,12 @@ namespace Application.Services
          
             if(aux != null)
             {
-                _api.EventosRepository.Delete(aux);
+                //_api.EventosRepository.Delete(aux);
+
+                aux.Ativo = false;
+
+                _api.EventosRepository.Update(aux);
+
                 await _api.Commit();
 
                 return true;

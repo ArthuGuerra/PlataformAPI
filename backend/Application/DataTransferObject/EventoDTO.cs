@@ -15,6 +15,8 @@ namespace Application.DataTransferObject
         public DateTime DataEvento { get; set; }
         public string? Descricao { get; set; }
         public string? LocalEvento { get; set; }
+        public bool Ativo { get; set; } = true;
+
 
     }
 }

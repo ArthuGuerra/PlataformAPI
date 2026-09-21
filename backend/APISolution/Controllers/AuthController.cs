@@ -109,47 +109,66 @@ namespace APISolution.Controllers
         {
             var user = await _user.FindByNameAsync(model.Username!);
 
-
-            if (user is not null && await _user.CheckPasswordAsync(user, model.Password!))
+            if (user is null || !user.Ativo)
             {
-                var userRoles = await _user.GetRolesAsync(user);
-
-                var authClaims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.Name, user.UserName!),
-                    new Claim(ClaimTypes.Email, user.Email!),
-                    new Claim("userId", user.Id!),          
-                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                };               
-
-                foreach (var userRole in userRoles)
-                {
-                    authClaims.Add(new Claim(ClaimTypes.Role, userRole));
-                }
-
-                var token = _token.GenerateAccessToken(authClaims, _config);
-
-                var refreshToken = _token.GenerateRefreshToken();
-
-                _ = int.TryParse(_config["JWT:RefreshTokenValidityInHours"], out int refreshTokenValidityInHours);
-
-                user.RefreshToken = refreshToken;
-
-                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddHours(refreshTokenValidityInHours);
-
-                await _user.UpdateAsync(user);
-
-                return Ok(new
-                {
-                    Token = new JwtSecurityTokenHandler().WriteToken(token),
-                    RefreshToken = refreshToken,
-                    Expiration = token.ValidTo,
-                    Authenticated = true,
-                    Message = "Usuario autenticado com sucesso"
-                });
+                return Unauthorized();
             }
 
-            return Unauthorized();
+            if (!await _user.CheckPasswordAsync(user, model.Password!))
+            {
+                return Unauthorized();
+            }
+
+            var userRoles = await _user.GetRolesAsync(user);            
+
+            var authClaims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, user.UserName!),
+                new Claim(ClaimTypes.Email, user.Email!),
+                new Claim("userId", user.Id!),
+                new Claim(
+                    JwtRegisteredClaimNames.Jti,
+                    Guid.NewGuid().ToString())
+            };
+
+            foreach (var userRole in userRoles)
+            {
+                authClaims.Add(
+                    new Claim(ClaimTypes.Role, userRole));
+            }
+
+            var token = _token.GenerateAccessToken(
+                authClaims,
+                _config);
+
+            var refreshToken = _token.GenerateRefreshToken();
+
+            _ = int.TryParse(
+                _config["JWT:RefreshTokenValidityInHours"],
+                out int refreshTokenValidityInHours);
+
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiryTime =
+                DateTime.UtcNow.AddHours(refreshTokenValidityInHours);
+
+            var updateResult = await _user.UpdateAsync(user);
+
+            if (!updateResult.Succeeded)
+            {
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    "Não foi possível atualizar o usuário.");
+            }
+
+            return Ok(new
+            {
+                Token = new JwtSecurityTokenHandler()
+                    .WriteToken(token),
+                RefreshToken = refreshToken,
+                Expiration = token.ValidTo,
+                Authenticated = true,
+                Message = "Usuário autenticado com sucesso"
+            });
         }
 
 
@@ -284,7 +303,7 @@ namespace APISolution.Controllers
         [Authorize(Policy = "Super")]
         public async Task<ActionResult<ICollection<IdentityRole>>> ShowRoles()
         {
-            return Ok(await _role.Roles.ToListAsync());            
+            return Ok(await _role.Roles.ToListAsync());        
         }
 
     }

@@ -31,7 +31,6 @@ namespace ApiTest.UnitTestes
             
         }
 
-
         protected static ApiContext CreateContext(DatabaseType databaseType)
         {           
 

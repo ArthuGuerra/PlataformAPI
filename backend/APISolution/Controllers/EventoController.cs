@@ -34,10 +34,18 @@ namespace APISolution.Controllers
         }
 
 
+        [HttpGet("EventosDTO/Ativos")]
+        public async Task<ActionResult<Collection<EventoDTO>>> GetAtivos()
+        {
+            return Ok(await _es.EventosAtivos());
+
+        }
+
+
 
 
         [HttpGet("{id}")]
-        [Authorize(Policy ="Admin")]
+        [Authorize(Policy = "Super")]
         public async Task<IActionResult> GetId (int id)
         {           
             var aux = await _es.GetEventoId(id);
@@ -71,7 +79,7 @@ namespace APISolution.Controllers
 
 
         [HttpPost("CreateEvento")]
-        [Authorize(Policy = "Admin")]
+        [Authorize(Policy = "Super")]
         public async Task<IActionResult> CreateEventos(EventoDTO evento)
         {
             
@@ -89,7 +97,7 @@ namespace APISolution.Controllers
 
 
         [HttpPatch("UpdateADM")]
-        [Authorize(Policy = "Admin")]
+        [Authorize(Policy = "Super")]
         public async Task<IActionResult> UpdateADM(int id, CreateEventoDTO dto)
         {
            
@@ -107,7 +115,7 @@ namespace APISolution.Controllers
 
 
         [HttpPatch("Update")]
-        [Authorize(Policy = "Admin")]
+        [Authorize(Policy = "Super")]
         public async Task<IActionResult> UpdateEvento(int id, EventoDTO dto)
         {
             
@@ -127,7 +135,7 @@ namespace APISolution.Controllers
 
 
         [HttpDelete("Delete")]
-        [Authorize(Policy = "Admin")]
+        [Authorize(Policy = "Super")]
         public async Task<IActionResult> DeleteEvento(int id)
         {  
             
@@ -164,7 +172,7 @@ namespace APISolution.Controllers
 
 
         [HttpGet("EventosInscricoes")]
-        [Authorize(Policy = "Admin")]
+        [Authorize(Policy = "Super")]
         public async Task<ActionResult<ICollection<Evento>>> EventoInscricoes()
         {                       
             return Ok(await _es.EventoInscricao());                     

@@ -8,6 +8,7 @@ namespace Infraestrutura.Interfaces
 {
     public interface IEventosRepository : IRepository<Evento>
     {
+        public Task<ICollection<Evento>> GetEventosAtivos();
         public Task<Evento> GetEventoNome(string nome);
         public Task<ICollection<Evento>> GetEventoInscricao();
         public Task<bool> UpdateADM(int id, double preco, int quantidade);

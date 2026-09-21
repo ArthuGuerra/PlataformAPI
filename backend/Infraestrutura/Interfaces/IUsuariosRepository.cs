@@ -10,5 +10,6 @@ namespace Infraestrutura.Interfaces
     {
         public Task<ICollection<Usuario>> GetUsuarioInscricao();
         public Task<ICollection<Usuario>> GetAllAsync();
+        public Task<ICollection<Usuario>> GetAllAtivosAsync();
     }
 }
