@@ -1,4 +1,5 @@
 ﻿using APISolution.Controllers;
+using Application.Configuration;
 using Application.DataTransferObject;
 using Application.DataTransferObject.IdentityDTO;
 using Application.Interfaces;
@@ -24,9 +25,10 @@ namespace ApiTest.UnitTestes.Token
         private readonly Mock<ITokenService> _token;
         private readonly Mock<UserManager<Usuario>> _user;
         private readonly Mock<RoleManager<IdentityRole>> _role;
-        private readonly Mock<IConfiguration> _config;
         private readonly Mock<ILogger<AuthController>> _logger;
         private readonly Mock<IUsuarioServices> _userServices;
+        private readonly Mock<JwtOptions> _jwtOptions;
+
 
         public TokenUnitTestController()
         {
@@ -36,9 +38,11 @@ namespace ApiTest.UnitTestes.Token
 
             _role = CriarMockRoleManager();
 
-            _config = new Mock<IConfiguration>();
             _logger = new Mock<ILogger<AuthController>>();
+
             _userServices = new Mock<IUsuarioServices>();
+
+            _jwtOptions = new Mock<JwtOptions>();
         }
 
         private AuthController CriarController()
@@ -47,9 +51,10 @@ namespace ApiTest.UnitTestes.Token
                 _token.Object,
                 _user.Object,
                 _role.Object,
-                _config.Object,
                 _logger.Object,
-                _userServices.Object);
+                _userServices.Object,
+                _jwtOptions.Object 
+                );
         }
 
         private static Mock<UserManager<Usuario>> CriarMockUserManager()
@@ -95,7 +100,7 @@ namespace ApiTest.UnitTestes.Token
 
 
         [Fact]
-        [Trait("Auth", "Controller")] 
+        [Trait("Auth", "Controller")]
         public async Task Login_DeveRetornarOk_QuandoUsuarioEsenhaForemValidos()
         {
             // Arrange
@@ -103,7 +108,8 @@ namespace ApiTest.UnitTestes.Token
             {
                 Id = "usuario-123",
                 UserName = "arthur",
-                Email = "arthur@email.com"
+                Email = "arthur@email.com",
+                Ativo = true
             };
 
             var model = new LoginModelDTO
@@ -114,9 +120,9 @@ namespace ApiTest.UnitTestes.Token
 
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, usuario.UserName!),
-                new Claim(ClaimTypes.Email, usuario.Email!),
-                new Claim("userId", usuario.Id!)
+                new(ClaimTypes.Name, usuario.UserName!),
+                new(ClaimTypes.Email, usuario.Email!),
+                new(ClaimTypes.NameIdentifier, usuario.Id!)
             };
 
             var jwtToken = new JwtSecurityToken(
@@ -126,10 +132,6 @@ namespace ApiTest.UnitTestes.Token
                 expires: DateTime.UtcNow.AddHours(2));
 
             var refreshToken = "refresh-token-teste";
-
-            _config
-                .Setup(x => x["JWT:RefreshTokenValidityInHours"])
-                .Returns("2");
 
             _user
                 .Setup(x => x.FindByNameAsync(model.Username))
@@ -149,8 +151,7 @@ namespace ApiTest.UnitTestes.Token
 
             _token
                 .Setup(x => x.GenerateAccessToken(
-                    It.IsAny<List<Claim>>(),
-                    It.IsAny<IConfiguration>()))
+                    It.IsAny<IEnumerable<Claim>>()))
                 .Returns(jwtToken);
 
             _token
@@ -165,9 +166,8 @@ namespace ApiTest.UnitTestes.Token
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
 
-            Assert.Equal(200, okResult.StatusCode);
+            Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
             Assert.NotNull(okResult.Value);
-
             Assert.Equal(refreshToken, usuario.RefreshToken);
 
             _user.Verify(
@@ -188,14 +188,15 @@ namespace ApiTest.UnitTestes.Token
 
             _token.Verify(
                 x => x.GenerateAccessToken(
-                    It.IsAny<List<Claim>>(),
-                    It.IsAny<IConfiguration>()),
+                    It.IsAny<IEnumerable<Claim>>()),
                 Times.Once);
 
             _token.Verify(
                 x => x.GenerateRefreshToken(),
                 Times.Once);
         }
+
+
 
         [Fact]
         [Trait("Auth", "Controller")]
@@ -273,8 +274,7 @@ namespace ApiTest.UnitTestes.Token
 
             _token.Verify(
                 x => x.GenerateAccessToken(
-                    It.IsAny<List<Claim>>(),
-                    It.IsAny<IConfiguration>()),
+                    It.IsAny<List<Claim>>()),                   
                 Times.Never);
         }
 
@@ -626,8 +626,7 @@ namespace ApiTest.UnitTestes.Token
 
             _token
                 .Setup(x => x.GetPrincipalFromExpiredToken(
-                    model.AccessToken,
-                    config))
+                    model.AccessToken))
                 .Returns((ClaimsPrincipal?)null);
 
             var controller = CriarController();

@@ -1,4 +1,5 @@
-﻿using Application.DataTransferObject.IdentityDTO;
+﻿using Application.Configuration;
+using Application.DataTransferObject.IdentityDTO;
 using Application.Interfaces;
 using Asp.Versioning;
 using Azure;
@@ -24,20 +25,20 @@ namespace APISolution.Controllers
         private readonly ITokenService _token;
         private readonly UserManager<Usuario> _user;
         private readonly RoleManager<IdentityRole> _role;
-        private readonly IConfiguration _config;
         private readonly ILogger<AuthController> _logger;
         private IUsuarioServices _userServices;
+        private readonly JwtOptions _jwtOptions;
 
 
 
-        public AuthController(ITokenService token, UserManager<Usuario> user, RoleManager<IdentityRole> role, IConfiguration config, ILogger<AuthController> logger, IUsuarioServices userServices)
+        public AuthController(ITokenService token, UserManager<Usuario> user, RoleManager<IdentityRole> role, ILogger<AuthController> logger, IUsuarioServices userServices, JwtOptions jwtOptions)
         {
             _token = token;
             _user = user;
             _role = role;
-            _config = config;
             _logger = logger;
             _userServices = userServices;
+            _jwtOptions = jwtOptions;
         }
 
         [Authorize(Policy = "Super")]
@@ -137,20 +138,14 @@ namespace APISolution.Controllers
                     new Claim(ClaimTypes.Role, userRole));
             }
 
-            var token = _token.GenerateAccessToken(
-                authClaims,
-                _config);
+            var token = _token.GenerateAccessToken(authClaims);
 
             var refreshToken = _token.GenerateRefreshToken();
 
-            _ = int.TryParse(
-                _config["JWT:RefreshTokenValidityInHours"],
-                out int refreshTokenValidityInHours);
-
             user.RefreshToken = refreshToken;
             user.RefreshTokenExpiryTime =
-                DateTime.UtcNow.AddHours(refreshTokenValidityInHours);
-
+                DateTime.UtcNow.AddHours(_jwtOptions.RefreshTokenValidityInHours);
+            
             var updateResult = await _user.UpdateAsync(user);
 
             if (!updateResult.Succeeded)
@@ -237,7 +232,7 @@ namespace APISolution.Controllers
 
             string? refreshToken = model.RefreshToken ?? throw new ArgumentNullException(nameof(model));
 
-            var principal = _token.GetPrincipalFromExpiredToken(accessToken!, _config);
+            var principal = _token.GetPrincipalFromExpiredToken(accessToken!);
 
             if (principal == null)
             {
@@ -258,7 +253,7 @@ namespace APISolution.Controllers
                 return BadRequest("Invalid access/Refresh token");
             }
 
-            var newAccessToken = _token.GenerateAccessToken(principal.Claims.ToList(), _config);
+            var newAccessToken = _token.GenerateAccessToken(principal.Claims.ToList());
 
             var newRefreshToken = _token.GenerateRefreshToken();
 

@@ -1,32 +1,35 @@
-using Microsoft.AspNetCore.Hosting.Server;
-using Microsoft.EntityFrameworkCore;
+using APISolution.Filter;
+using APISolution.MiddlawareException;
+using APISolution.MyRateLimit;
+using Application.Configuration;
+using Application.Configuration;
+using Application.DataTransferObject;
+using Application.Interfaces;
+using Application.InterfacesApp;
+using Application.MapperExtension;
+using Application.Services;
+using Application.ServicesApp;
+using Asp.Versioning;
+using AutoMapper;
 using Domain.Entities;
 using Infraestrutura.BancoContexto;
-using System.Security.Cryptography.Xml;
-using System.Text.Json.Serialization;
-using APISolution.MiddlawareException;
-using Infraestrutura.Interfaces;
 using Infraestrutura.ContextRepository;
-using APISolution.Filter;
-using Application.Interfaces;
-using Application.Services;
-using Application.DataTransferObject;
-using Application.MapperExtension;
-using AutoMapper;
-using Serilog;
-using Microsoft.AspNetCore.Identity;
+using Infraestrutura.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using Microsoft.OpenApi;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using System.Security.Claims;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
+using Serilog;
+using System.Security.Claims;
+using System.Security.Cryptography.Xml;
+using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
-using APISolution.MyRateLimit;
-using Asp.Versioning;
-using Application.InterfacesApp;
-using Application.ServicesApp;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,20 +38,26 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
 
-builder.Services.AddControllers().AddJsonOptions(options => options.JsonSerializerOptions.ReferenceHandler=ReferenceHandler.IgnoreCycles);
 
+var allowedOrigins = builder.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .Get<string[]>()
+    ?? Array.Empty<string>();
 
-
-
+if (allowedOrigins.Length == 0)
+{
+    throw new InvalidOperationException(
+        "Nenhuma origem CORS foi configurada.");
+}
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("ApiPolicy", policy =>
     {
-        policy.WithOrigins(
-            "https://localhost:7214") 
-        .AllowAnyHeader()
-        .AllowAnyMethod();
+        policy
+            .WithOrigins(allowedOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod();
     });
 });
 
@@ -123,7 +132,6 @@ builder.Services.AddIdentity<Usuario, IdentityRole>().AddEntityFrameworkStores<A
 
 
 
-builder.Services.AddScoped<ApiContext>();
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repositorio<>));
 builder.Services.AddScoped<IUnitOfWork,UnitOfWork>();
 builder.Services.AddScoped<IUsuariosRepository,UsuariosRepositorio>();
@@ -144,62 +152,108 @@ builder.Services.AddAutoMapper(cfg => { },
 
 
 
-builder.Services
-    .AddControllers()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.Converters.Add(
-            new JsonStringEnumConverter()
-        );
-    });
 
 
 
-
-
-builder.Services.AddScoped<ApiLoggingFilter>();
 
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<ApiLoggingFilter>();
+})
+.AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.ReferenceHandler =
+        ReferenceHandler.IgnoreCycles;
+
+    options.JsonSerializerOptions.Converters.Add(
+        new JsonStringEnumConverter());
 });
 
-
-
-Log.Logger = new LoggerConfiguration().WriteTo.File("C:\\Logs\\log.txt", rollingInterval: RollingInterval.Day).CreateLogger();
+Log.Logger = new LoggerConfiguration()
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .WriteTo.File(
+        path: "logs/api-.log",
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 30,
+        fileSizeLimitBytes: 10_000_000,
+        rollOnFileSizeLimit: true,
+        shared: false)
+    .CreateLogger();
 
 builder.Host.UseSerilog();
 
 
+builder.Services.AddOptions<JwtOptions>()
+    .Bind(builder.Configuration.GetSection(JwtOptions.SectionName))
+    .Validate(options =>
+        !string.IsNullOrWhiteSpace(options.SecretKey),
+        "JWT:SecretKey não configurado.")
+    .Validate(options =>
+        options.SecretKey.Length >= 32,
+        "JWT:SecretKey deve possuir pelo menos 32 caracteres.")
+    .Validate(options =>
+        !string.IsNullOrWhiteSpace(options.ValidIssuer),
+        "JWT:ValidIssuer não configurado.")
+    .Validate(options =>
+        !string.IsNullOrWhiteSpace(options.ValidAudience),
+        "JWT:ValidAudience não configurado.")
+    .ValidateOnStart();
 
 
 
-var secretKey = builder.Configuration["JWT:SecretKey"] ?? throw new ArgumentException("Invalid secret key!!");
 
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer(options =>
-{
-    options.SaveToken = true;
-    options.RequireHttpsMetadata = true;
-    options.TokenValidationParameters = new TokenValidationParameters()
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ClockSkew = TimeSpan.Zero,
-        ValidAudience = builder.Configuration["JWT:ValidAudience"],
-        ValidIssuer = builder.Configuration["JWT:ValidIssuer"],
-        IssuerSigningKey = new SymmetricSecurityKey
-            (
-                Encoding.UTF8.GetBytes(secretKey)
-            )
-    };
-});
+}).AddJwtBearer();
 
+
+builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+    .Configure<IOptions<JwtOptions>>(
+        (jwtBearerOptions, jwtOptionsAccessor) =>
+        {
+            var jwtOptions = jwtOptionsAccessor.Value;
+
+            jwtBearerOptions.SaveToken = true;
+
+            jwtBearerOptions.RequireHttpsMetadata =
+                !builder.Environment.IsDevelopment();
+
+            jwtBearerOptions.TokenValidationParameters =
+                new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = jwtOptions.ValidIssuer,
+
+                    ValidateAudience = true,
+                    ValidAudience = jwtOptions.ValidAudience,
+
+                    ValidateLifetime = true,
+
+                    ValidateIssuerSigningKey = true,
+
+                    IssuerSigningKey =
+                        new SymmetricSecurityKey(
+                            Encoding.UTF8.GetBytes(
+                                jwtOptions.SecretKey)),
+
+                    ClockSkew = TimeSpan.Zero,
+
+                    NameClaimType = ClaimTypes.Name,
+
+                    RoleClaimType = ClaimTypes.Role
+                };
+        });
+
+
+
+
+
+
+var superAdminUserId = builder.Configuration["SuperAdmin:UserId"]
+    ?? throw new InvalidOperationException("SuperAdmin:UserId não configurado.");
 
 
 
@@ -211,16 +265,16 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("Super", policy =>
     {
         policy.RequireRole("SuperAdmin");
+
         policy.RequireAssertion(context =>
         {
-            string? nome = context.User.FindFirst(ClaimTypes.Name)?.Value;
-            string? userId = context.User.FindFirst("userId")?.Value;
+            var userId = context.User.FindFirst("userId")?.Value;
 
-            return (nome == "ArthurGuerra" && userId == "6e509426-cded-49da-bbf6-a7878f6930d5");
+            return userId == superAdminUserId;
         });
-    });                                       
-    
-    
+    });
+
+
     options.AddPolicy("User", policy =>
     policy.RequireRole("User", "Admin", "SuperAdmin"));
 });
@@ -235,7 +289,6 @@ builder.Services.AddAuthorization(options =>
 
 
 
-builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen(c =>
 {
     //c.SwaggerDoc("v1", new OpenApiInfo { Title = "ApiSolution", Version = "v1" });
@@ -288,20 +341,20 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+app.ConfigureExceptionMiddlewareExtensions(); 
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
     app.UseSwagger();
-    app.UseSwaggerUI();
-    app.ConfigureExceptionMiddlewareExtensions();    
-
-    app.UseSwaggerUI(c =>
+    app.UseSwaggerUI(options =>
     {
-        c.SwaggerEndpoint("swagger/v1/swagger.json", "APISolution");
+        options.SwaggerEndpoint(
+            "/swagger/v1/swagger.json",
+            "APISolution v1");
     });
-
 }
+
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();

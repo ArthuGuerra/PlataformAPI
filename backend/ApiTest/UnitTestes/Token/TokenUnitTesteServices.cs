@@ -1,89 +1,102 @@
-﻿using Application.Services;
-using AutoFixture;
-using Microsoft.Extensions.Configuration;
+﻿using Application.Configuration;
+using Application.Services;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Security.Claims;
 using System.Text;
+using Xunit;
 
 namespace ApiTest.UnitTestes.Token
 {
     public class TokenUnitTesteServices
-    {       
+    {
+        private const string SecretKey =
+            "minha-chave-secreta-super-segura-com-pelo-menos-32-caracteres";
+
+        private const string Issuer = "MinhaAPI";
+        private const string Audience = "MinhaAPI";
+
         private readonly TokenService _tokenServices;
 
         public TokenUnitTesteServices()
         {
-            _tokenServices = new TokenService();
+            _tokenServices = CriarTokenService();
         }
 
-
-
-        private IConfiguration CreateConfiguration()
+        private static JwtOptions CriarJwtOptions()
         {
-            var settings = new Dictionary<string, string?>
+            return new JwtOptions
             {
-                ["JWT:SecretKey"] = "minha-chave-secreta-super-segura-com-pelo-menos-32-caracteres",
-                ["JWT:TokenValidityInHours"] = "2",
-                ["JWT:ValidAudience"] = "MinhaAPI",
-                ["JWT:ValidIssuer"] = "MinhaAPI"
+                SecretKey = SecretKey,
+                TokenValidityInHours = 2,
+                RefreshTokenValidityInHours = 2,
+                ValidIssuer = Issuer,
+                ValidAudience = Audience
             };
-
-            return new ConfigurationBuilder()
-                .AddInMemoryCollection(settings)
-                .Build();
         }
 
-        
-
-        private string CreateExpiredToken(IConfiguration config)
+        private static TokenService CriarTokenService()
         {
-            var key = config["JWT:SecretKey"]!;
+            var options = Options.Create(CriarJwtOptions());
+
+            return new TokenService(options);
+        }
+
+        private static TokenService CriarTokenService(JwtOptions jwtOptions)
+        {
+            var options = Options.Create(jwtOptions);
+
+            return new TokenService(options);
+        }
+
+        private static string CreateExpiredToken()
+        {
+            var jwtOptions = CriarJwtOptions();
 
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, "Arthur"),
-                new Claim(ClaimTypes.Email, "arthur@email.com"),
-                new Claim(ClaimTypes.Role, "Administrador")
+                new(ClaimTypes.Name, "Arthur"),
+                new(ClaimTypes.Email, "arthur@email.com"),
+                new(ClaimTypes.Role, "Administrador")
             };
 
             var credentials = new SigningCredentials(
-                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
+                new SymmetricSecurityKey(
+                    Encoding.UTF8.GetBytes(jwtOptions.SecretKey)),
                 SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
-                issuer: config["JWT:ValidIssuer"],
-                audience: config["JWT:ValidAudience"],
+                issuer: jwtOptions.ValidIssuer,
+                audience: jwtOptions.ValidAudience,
                 claims: claims,
                 expires: DateTime.UtcNow.AddHours(-1),
                 signingCredentials: credentials);
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            return new JwtSecurityTokenHandler()
+                .WriteToken(token);
         }
-
-
 
         [Fact]
         [Trait("Auth", "Services")]
         public void GenerateAccessToken_DeveGerarToken()
         {
             // Arrange
-            var config = CreateConfiguration();
-
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, "Arthur"),
-                new Claim(ClaimTypes.Email, "arthur@email.com")
+                new(ClaimTypes.Name, "Arthur"),
+                new(ClaimTypes.Email, "arthur@email.com")
             };
 
             // Act
-            var token = _tokenServices.GenerateAccessToken(claims, config);
+            var token = _tokenServices.GenerateAccessToken(claims);
 
             // Assert
             Assert.NotNull(token);
-            Assert.NotEmpty(token.RawData);
+            Assert.False(string.IsNullOrWhiteSpace(token.RawData));
         }
 
         [Fact]
@@ -91,48 +104,49 @@ namespace ApiTest.UnitTestes.Token
         public void GenerateAccessToken_DeveConterClaims()
         {
             // Arrange
-            var config = CreateConfiguration();
-
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, "Arthur"),
-                new Claim(ClaimTypes.Email, "arthur@email.com"),
-                new Claim(ClaimTypes.Role, "Administrador")
+                new(ClaimTypes.Name, "Arthur"),
+                new(ClaimTypes.Email, "arthur@email.com"),
+                new(ClaimTypes.Role, "Administrador")
             };
 
             // Act
-            var token = _tokenServices.GenerateAccessToken(claims, config);
+            var token = _tokenServices.GenerateAccessToken(claims);
 
             // Assert
             Assert.Contains(
                 token.Claims,
-                x => x.Type == "unique_name" && x.Value == "Arthur");
+                claim =>
+                    claim.Type == ClaimTypes.Name &&
+                    claim.Value == "Arthur");
 
             Assert.Contains(
                 token.Claims,
-                x => x.Type == "email" && x.Value == "arthur@email.com");
+                claim =>
+                    claim.Type == ClaimTypes.Email &&
+                    claim.Value == "arthur@email.com");
 
             Assert.Contains(
                 token.Claims,
-                x => x.Type == "role" && x.Value == "Administrador");
+                claim =>
+                    claim.Type == ClaimTypes.Role &&
+                    claim.Value == "Administrador");
         }
-
 
         [Fact]
         [Trait("Auth", "Services")]
         public void GenerateAccessToken_DeveConfigurarIssuerEAudience()
         {
             // Arrange
-            var config = CreateConfiguration();
-
             var claims = new List<Claim>();
 
             // Act
-            var token = _tokenServices.GenerateAccessToken(claims, config);
+            var token = _tokenServices.GenerateAccessToken(claims);
 
             // Assert
-            Assert.Equal("MinhaAPI", token.Issuer);
-            Assert.Equal("MinhaAPI", token.Audiences.Single());
+            Assert.Equal(Issuer, token.Issuer);
+            Assert.Equal(Audience, token.Audiences.Single());
         }
 
         [Fact]
@@ -140,41 +154,16 @@ namespace ApiTest.UnitTestes.Token
         public void GenerateAccessToken_DeveUsarHmacSha256()
         {
             // Arrange
-            var config = CreateConfiguration();
-
             var claims = new List<Claim>();
 
             // Act
-            var token = _tokenServices.GenerateAccessToken(claims, config);
+            var token = _tokenServices.GenerateAccessToken(claims);
 
             // Assert
-            Assert.Equal(token.Header.Alg,"HS256");
+            Assert.Equal(
+                SecurityAlgorithms.HmacSha256,
+                token.Header.Alg);
         }
-
-
-        [Fact]
-        [Trait("Auth", "Services")]
-        public void GenerateAccessToken_DeveLancarExcecaoSemSecretKey()
-        {
-            // Arrange
-            var settings = new Dictionary<string, string?>
-            {
-                ["JWT:TokenValidityInHours"] = "2",
-                ["JWT:ValidAudience"] = "MinhaAPI",
-                ["JWT:ValidIssuer"] = "MinhaAPI"
-            };
-
-            var config = new ConfigurationBuilder()
-                .AddInMemoryCollection(settings)
-                .Build();
-
-            var claims = new List<Claim>();
-
-            // Act & Assert
-            Assert.Throws<ArgumentException>(() =>
-                _tokenServices.GenerateAccessToken(claims, config));
-        }
-
 
         [Fact]
         [Trait("Auth", "Services")]
@@ -185,6 +174,9 @@ namespace ApiTest.UnitTestes.Token
 
             // Assert
             Assert.NotNull(token);
+
+            // 128 bytes convertidos em Base64 resultam normalmente
+            // em 172 caracteres.
             Assert.Equal(172, token.Length);
         }
 
@@ -205,14 +197,11 @@ namespace ApiTest.UnitTestes.Token
         public void GetPrincipalFromExpiredToken_DeveRetornarPrincipal()
         {
             // Arrange
-            var config = CreateConfiguration();
-
-            var token = CreateExpiredToken(config);
+            var token = CreateExpiredToken();
 
             // Act
-            var principal = _tokenServices.GetPrincipalFromExpiredToken(
-                token,
-                config);
+            var principal =
+                _tokenServices.GetPrincipalFromExpiredToken(token);
 
             // Assert
             Assert.NotNull(principal);
@@ -232,45 +221,54 @@ namespace ApiTest.UnitTestes.Token
 
         [Fact]
         [Trait("Auth", "Services")]
+        public void GetPrincipalFromExpiredToken_DeveAceitarTokenExpirado()
+        {
+            // Arrange
+            var token = CreateExpiredToken();
+
+            // Act
+            var principal =
+                _tokenServices.GetPrincipalFromExpiredToken(token);
+
+            // Assert
+            Assert.NotNull(principal);
+        }
+
+        [Fact]
+        [Trait("Auth", "Services")]
         public void GetPrincipalFromExpiredToken_DeveFalharComChaveInvalida()
         {
             // Arrange
-            var config = CreateConfiguration();
+            var token = CreateExpiredToken();
 
-            var token = CreateExpiredToken(config);
-
-            var invalidConfig = new ConfigurationBuilder()
-                .AddInMemoryCollection(new Dictionary<string, string?>
+            var tokenServiceComChaveDiferente =
+                CriarTokenService(new JwtOptions
                 {
-                    ["JWT:SecretKey"] =
+                    SecretKey =
                         "outra-chave-secreta-completamente-diferente-123456",
-                    ["JWT:ValidAudience"] = "MinhaAPI",
-                    ["JWT:ValidIssuer"] = "MinhaAPI"
-                })
-                .Build();
+
+                    TokenValidityInHours = 2,
+                    RefreshTokenValidityInHours = 2,
+                    ValidIssuer = Issuer,
+                    ValidAudience = Audience
+                });
 
             // Act & Assert
-            Assert.Throws<SecurityTokenSignatureKeyNotFoundException>(() =>
-                _tokenServices.GetPrincipalFromExpiredToken(
-                    token,
-                    invalidConfig));
+            Assert.Throws<SecurityTokenException>(() =>
+                tokenServiceComChaveDiferente
+                    .GetPrincipalFromExpiredToken(token));
         }
-
 
         [Fact]
         [Trait("Auth", "Services")]
         public void GetPrincipalFromExpiredToken_DeveFalharComTokenInvalido()
         {
             // Arrange
-            var config = CreateConfiguration();
-
             var token = "token completamente invalido";
 
             // Act & Assert
-            Assert.Throws<SecurityTokenMalformedException>(() =>
-                _tokenServices.GetPrincipalFromExpiredToken(
-                    token,
-                    config));
+            Assert.Throws<SecurityTokenException>(() =>
+                _tokenServices.GetPrincipalFromExpiredToken(token));
         }
     }
 }

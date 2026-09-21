@@ -10,9 +10,13 @@ namespace Application.Interfaces
 {
     public interface ITokenService
     {
-        JwtSecurityToken GenerateAccessToken(IEnumerable<Claim> claims, IConfiguration _config);
+        JwtSecurityToken GenerateAccessToken(
+          IEnumerable<Claim> claims);
+
         string GenerateRefreshToken();
-        ClaimsPrincipal GetPrincipalFromExpiredToken(string token, IConfiguration _config);
-                
+
+        ClaimsPrincipal GetPrincipalFromExpiredToken(
+            string token);
+
     }
 }

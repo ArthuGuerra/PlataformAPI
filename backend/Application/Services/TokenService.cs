@@ -1,86 +1,119 @@
-﻿using Application.Interfaces;
-using Microsoft.Extensions.Configuration;
+﻿using Application.Configuration;
+using Application.Interfaces;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Application.Services
+namespace Application.Services;
+
+public sealed class TokenService : ITokenService
 {
-    public class TokenService : ITokenService
+    private readonly JwtOptions _jwtOptions;
+
+    public TokenService(IOptions<JwtOptions> jwtOptions)
     {
-        public JwtSecurityToken GenerateAccessToken(IEnumerable<Claim> claims, IConfiguration _config)
+        _jwtOptions = jwtOptions.Value;
+    }
+
+    public JwtSecurityToken GenerateAccessToken(
+        IEnumerable<Claim> claims)
+    {
+        var securityKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(_jwtOptions.SecretKey));
+
+        var signingCredentials = new SigningCredentials(
+            securityKey,
+            SecurityAlgorithms.HmacSha256);
+
+        var tokenDescriptor = new SecurityTokenDescriptor
         {
-            var key = _config.GetSection("JWT").GetValue<string>("SecretKey") ?? throw new ArgumentException();
+            Subject = new ClaimsIdentity(claims),
 
-            var privateKey = Encoding.UTF8.GetBytes(key);
+            Expires = DateTime.UtcNow.AddHours(
+                _jwtOptions.TokenValidityInHours),
 
+            Issuer = _jwtOptions.ValidIssuer,
 
+            Audience = _jwtOptions.ValidAudience,
 
-            var signingCredentials = new SigningCredentials(new SymmetricSecurityKey(privateKey), SecurityAlgorithms.HmacSha256Signature);
+            SigningCredentials = signingCredentials
+        };
 
+        var tokenHandler = new JwtSecurityTokenHandler();
 
-            var tokenDescriptor = new SecurityTokenDescriptor
+        return tokenHandler.CreateJwtSecurityToken(
+            tokenDescriptor);
+    }
+
+    public string GenerateRefreshToken()
+    {
+        var secureRandomBytes = new byte[128];
+
+        using var randomNumberGenerator =
+            RandomNumberGenerator.Create();
+
+        randomNumberGenerator.GetBytes(secureRandomBytes);
+
+        return Convert.ToBase64String(secureRandomBytes);
+    }
+
+    public ClaimsPrincipal GetPrincipalFromExpiredToken(
+        string token)
+    {
+        var tokenValidationParameters =
+            new TokenValidationParameters
             {
-                Subject = new ClaimsIdentity(claims),
+                ValidateIssuer = true,
+                ValidIssuer = _jwtOptions.ValidIssuer,
 
-                Expires = DateTime.UtcNow.AddHours(_config.GetSection("JWT").GetValue<double>("TokenValidityInHours")),
+                ValidateAudience = true,
+                ValidAudience = _jwtOptions.ValidAudience,
 
-                Audience = _config.GetSection("JWT").GetValue<string>("ValidAudience"),
-
-                Issuer = _config.GetSection("JWT").GetValue<string>("ValidIssuer"),
-
-                SigningCredentials = signingCredentials
-
-            };
-
-            var tokenHandler = new JwtSecurityTokenHandler();
-
-            var token = tokenHandler.CreateJwtSecurityToken(tokenDescriptor);
-
-            return token;                    
-        }
-
-
-
-        public string GenerateRefreshToken()
-        {
-            var secureRandomBytes = new byte[128];
-
-            using var randomNumberGenerator = RandomNumberGenerator.Create();
-
-            randomNumberGenerator.GetBytes(secureRandomBytes);
-
-            var refreshToken = Convert.ToBase64String(secureRandomBytes);
-            return refreshToken;
-        }
-
-
-
-        public ClaimsPrincipal GetPrincipalFromExpiredToken(string token, IConfiguration _config)
-        {
-            var secretKey = _config["JWT:SecretKey"] ?? throw new ArgumentException("secretkey nao encontrada.");
-
-            var tokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateAudience = false, 
-                ValidateIssuer = false,
                 ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
-                ValidateLifetime = false
+
+                IssuerSigningKey =
+                    new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(
+                            _jwtOptions.SecretKey)),
+
+                // Necessário durante o refresh token,
+                // pois o access token pode estar expirado.
+                ValidateLifetime = false,
+
+                ValidateTokenReplay = false,
+
+                ClockSkew = TimeSpan.Zero,
+
+                NameClaimType = ClaimTypes.Name,
+
+                RoleClaimType = ClaimTypes.Role
             };
 
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken securityToken);
+        var tokenHandler = new JwtSecurityTokenHandler();
 
-            if (securityToken is not JwtSecurityToken jwtSecurityToken || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256,StringComparison.InvariantCultureIgnoreCase))
-            {
-                throw new SecurityTokenException("Invalid Token");
-            }
-            return principal;
+        var principal = tokenHandler.ValidateToken(
+            token,
+            tokenValidationParameters,
+            out var securityToken);
+
+        if (securityToken is not JwtSecurityToken jwtSecurityToken)
+        {
+            throw new SecurityTokenException(
+                "O token informado não é um JWT válido.");
         }
+
+        if (!string.Equals(
+                jwtSecurityToken.Header.Alg,
+                SecurityAlgorithms.HmacSha256,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new SecurityTokenException(
+                "O algoritmo do token é inválido.");
+        }
+
+        return principal;
     }
 }
