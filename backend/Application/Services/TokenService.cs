@@ -99,7 +99,8 @@ public sealed class TokenService : ITokenService
             tokenValidationParameters,
             out var securityToken);
 
-        if (securityToken is not JwtSecurityToken jwtSecurityToken)
+        if (securityToken is not JwtSecurityToken jwtSecurityToken || 
+            !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.OrdinalIgnoreCase))
         {
             throw new SecurityTokenException(
                 "O token informado não é um JWT válido.");

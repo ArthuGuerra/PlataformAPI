@@ -22,8 +22,8 @@ namespace APISolution.MiddlawareException
                         await context.Response.WriteAsync(new ErrorDetails()
                         {
                             StatusCode = context.Response.StatusCode,
-                            Message = contextFeature.Error.Message,
-                            Trace = contextFeature.Error.StackTrace
+                            Message = "Ocorreu um erro interno",
+                            Trace = "...."
                         }.ToString());
                     }
                 });

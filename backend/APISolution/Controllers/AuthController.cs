@@ -12,8 +12,11 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace APISolution.Controllers
 {
@@ -31,15 +34,25 @@ namespace APISolution.Controllers
 
 
 
-        public AuthController(ITokenService token, UserManager<Usuario> user, RoleManager<IdentityRole> role, ILogger<AuthController> logger, IUsuarioServices userServices, JwtOptions jwtOptions)
+        public AuthController(ITokenService token, UserManager<Usuario> user, RoleManager<IdentityRole> role, ILogger<AuthController> logger, IUsuarioServices userServices, IOptions<JwtOptions> jwtOptions)
         {
             _token = token;
             _user = user;
             _role = role;
             _logger = logger;
             _userServices = userServices;
-            _jwtOptions = jwtOptions;
+            _jwtOptions = jwtOptions.Value;
         }
+
+        private static string HashRefreshToken(string refreshToken)
+        {
+            return Convert.ToBase64String(
+                SHA256.HashData(
+                    Encoding.UTF8.GetBytes(refreshToken)));
+        }
+
+
+
 
         [Authorize(Policy = "Super")]
         [HttpPost("CreateRole")]
@@ -142,10 +155,12 @@ namespace APISolution.Controllers
 
             var refreshToken = _token.GenerateRefreshToken();
 
-            user.RefreshToken = refreshToken;
+            user.RefreshToken = HashRefreshToken(refreshToken);
+
             user.RefreshTokenExpiryTime =
-                DateTime.UtcNow.AddHours(_jwtOptions.RefreshTokenValidityInHours);
-            
+                DateTime.UtcNow.AddHours(
+                    _jwtOptions.RefreshTokenValidityInHours);
+
             var updateResult = await _user.UpdateAsync(user);
 
             if (!updateResult.Succeeded)
@@ -232,6 +247,13 @@ namespace APISolution.Controllers
 
             string? refreshToken = model.RefreshToken ?? throw new ArgumentNullException(nameof(model));
 
+            if (string.IsNullOrWhiteSpace(model.AccessToken) ||
+                string.IsNullOrWhiteSpace(model.RefreshToken))
+            {
+                return BadRequest("Access token e refresh token são obrigatórios.");
+            }
+
+
             var principal = _token.GetPrincipalFromExpiredToken(accessToken!);
 
             if (principal == null)
@@ -248,20 +270,28 @@ namespace APISolution.Controllers
 
             var user = await _user.FindByNameAsync(username!);
 
-            if (user == null || user.RefreshToken != refreshToken || user.RefreshTokenExpiryTime < DateTime.UtcNow)
+            var refreshTokenHash = HashRefreshToken(refreshToken);
+
+            if (user == null ||
+                user.RefreshToken != refreshTokenHash ||
+                user.RefreshTokenExpiryTime < DateTime.UtcNow)
             {
-                return BadRequest("Invalid access/Refresh token");
+                return BadRequest("Access/Refresh token inválido");
             }
 
             var newAccessToken = _token.GenerateAccessToken(principal.Claims.ToList());
 
             var newRefreshToken = _token.GenerateRefreshToken();
 
-            user.RefreshToken = newRefreshToken;
-            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(3);
+            user.RefreshToken = HashRefreshToken(newRefreshToken);
+
+            user.RefreshTokenExpiryTime =  DateTime.UtcNow.AddHours(
+                    _jwtOptions.RefreshTokenValidityInHours);
+
+
             await _user.UpdateAsync(user);
 
-            return new ObjectResult(new
+            return Ok(new
             {
                 accessToken = new JwtSecurityTokenHandler().WriteToken(newAccessToken),
                 refreshToken = newRefreshToken

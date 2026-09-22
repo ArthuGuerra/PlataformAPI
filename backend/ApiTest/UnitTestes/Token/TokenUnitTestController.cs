@@ -9,12 +9,14 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.Extensions.Options;
 
 namespace ApiTest.UnitTestes.Token
 {
@@ -27,7 +29,7 @@ namespace ApiTest.UnitTestes.Token
         private readonly Mock<RoleManager<IdentityRole>> _role;
         private readonly Mock<ILogger<AuthController>> _logger;
         private readonly Mock<IUsuarioServices> _userServices;
-        private readonly Mock<JwtOptions> _jwtOptions;
+        private readonly Mock<IOptions<JwtOptions>> _jwtOptions;
 
 
         public TokenUnitTestController()
@@ -42,19 +44,30 @@ namespace ApiTest.UnitTestes.Token
 
             _userServices = new Mock<IUsuarioServices>();
 
-            _jwtOptions = new Mock<JwtOptions>();
+            _jwtOptions = new Mock<IOptions<JwtOptions>>();
         }
 
         private AuthController CriarController()
         {
+            var jwtOptions = Options.Create(new JwtOptions
+            {
+                SecretKey =
+                    "chave-secreta-de-teste-com-pelo-menos-32-caracteres",
+
+                ValidIssuer = "MinhaAPI",
+                ValidAudience = "MinhaAPI",
+
+                TokenValidityInHours = 2,
+                RefreshTokenValidityInHours = 24
+            });
+
             return new AuthController(
                 _token.Object,
                 _user.Object,
                 _role.Object,
                 _logger.Object,
                 _userServices.Object,
-                _jwtOptions.Object 
-                );
+                jwtOptions);
         }
 
         private static Mock<UserManager<Usuario>> CriarMockUserManager()
@@ -118,17 +131,16 @@ namespace ApiTest.UnitTestes.Token
                 Password = "123456"
             };
 
-            var claims = new List<Claim>
-            {
-                new(ClaimTypes.Name, usuario.UserName!),
-                new(ClaimTypes.Email, usuario.Email!),
-                new(ClaimTypes.NameIdentifier, usuario.Id!)
-            };
-
             var jwtToken = new JwtSecurityToken(
                 issuer: "MinhaAPI",
                 audience: "MinhaAPI",
-                claims: claims,
+                claims: new[]
+                {
+            new Claim(ClaimTypes.Name, usuario.UserName!),
+            new Claim(ClaimTypes.Email, usuario.Email!),
+            new Claim("userId", usuario.Id!),
+            new Claim(ClaimTypes.Role, "User")
+                },
                 expires: DateTime.UtcNow.AddHours(2));
 
             var refreshToken = "refresh-token-teste";
@@ -146,7 +158,15 @@ namespace ApiTest.UnitTestes.Token
                 .ReturnsAsync(new List<string> { "User" });
 
             _user
+                .Setup(x => x.GetRolesAsync(It.IsAny<Usuario>()))
+                .ReturnsAsync(new List<string> { "User" });
+
+            _user
                 .Setup(x => x.UpdateAsync(usuario))
+                .ReturnsAsync(IdentityResult.Success);
+
+            _user
+                .Setup(x => x.UpdateAsync(It.IsAny<Usuario>()))
                 .ReturnsAsync(IdentityResult.Success);
 
             _token
@@ -168,7 +188,15 @@ namespace ApiTest.UnitTestes.Token
 
             Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
             Assert.NotNull(okResult.Value);
-            Assert.Equal(refreshToken, usuario.RefreshToken);
+
+            // O banco deve armazenar o hash, não o token puro
+            Assert.NotNull(usuario.RefreshToken);
+            Assert.NotEqual(refreshToken, usuario.RefreshToken);
+
+            Assert.True(usuario.RefreshTokenExpiryTime > DateTime.UtcNow);
+            Assert.True(
+                usuario.RefreshTokenExpiryTime <=
+                DateTime.UtcNow.AddHours(24).AddSeconds(1));
 
             _user.Verify(
                 x => x.FindByNameAsync(model.Username),

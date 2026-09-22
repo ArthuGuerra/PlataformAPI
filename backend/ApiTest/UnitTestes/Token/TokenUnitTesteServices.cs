@@ -106,9 +106,8 @@ namespace ApiTest.UnitTestes.Token
             // Arrange
             var claims = new List<Claim>
             {
-                new(ClaimTypes.Name, "Arthur"),
-                new(ClaimTypes.Email, "arthur@email.com"),
-                new(ClaimTypes.Role, "Administrador")
+                new("userId", "usuario-123"),
+                new(ClaimTypes.Role, "Admin")
             };
 
             // Act
@@ -118,20 +117,14 @@ namespace ApiTest.UnitTestes.Token
             Assert.Contains(
                 token.Claims,
                 claim =>
-                    claim.Type == ClaimTypes.Name &&
-                    claim.Value == "Arthur");
+                    claim.Type == "userId" &&
+                    claim.Value == "usuario-123");
 
             Assert.Contains(
                 token.Claims,
                 claim =>
-                    claim.Type == ClaimTypes.Email &&
-                    claim.Value == "arthur@email.com");
-
-            Assert.Contains(
-                token.Claims,
-                claim =>
-                    claim.Type == ClaimTypes.Role &&
-                    claim.Value == "Administrador");
+                    claim.Type == "role" &&
+                    claim.Value == "Admin");
         }
 
         [Fact]
@@ -254,7 +247,7 @@ namespace ApiTest.UnitTestes.Token
                 });
 
             // Act & Assert
-            Assert.Throws<SecurityTokenException>(() =>
+            Assert.ThrowsAny<SecurityTokenSignatureKeyNotFoundException>(() =>
                 tokenServiceComChaveDiferente
                     .GetPrincipalFromExpiredToken(token));
         }
@@ -267,7 +260,7 @@ namespace ApiTest.UnitTestes.Token
             var token = "token completamente invalido";
 
             // Act & Assert
-            Assert.Throws<SecurityTokenException>(() =>
+            Assert.Throws<SecurityTokenMalformedException>(() =>
                 _tokenServices.GetPrincipalFromExpiredToken(token));
         }
     }

@@ -96,9 +96,8 @@ builder.Services.AddRateLimiter(options =>
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpcontext => RateLimitPartition.GetFixedWindowLimiter(
-                                        partitionKey: httpcontext.User.Identity?.Name ??
-                                        httpcontext.Request.Headers.Host.ToString(),
-                    factory: partion => new FixedWindowRateLimiterOptions
+                                        partitionKey: httpcontext.Connection.RemoteIpAddress?.ToString() ?? "unknown",                
+                    factory: _ => new FixedWindowRateLimiterOptions
                     {
                         AutoReplenishment = myOptions.AutoReplenishment,
                         PermitLimit = myOptions.PermitLimit,
@@ -317,8 +316,8 @@ builder.Services.AddSwaggerGen(c =>
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
     {
         Name = "Authorization",
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
         Description = "Bearer JWT",
