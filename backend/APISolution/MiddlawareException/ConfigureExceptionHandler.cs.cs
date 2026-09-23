@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Diagnostics;
 using System.Net;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 
 namespace APISolution.MiddlawareException
 {
@@ -13,19 +14,32 @@ namespace APISolution.MiddlawareException
             {
                 appError.Run(async context =>
                 {
-                    context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-                    context.Response.ContentType = "application/json";
-                    var contextFeature = context.Features.Get<IExceptionHandlerFeature>();
 
-                    if (contextFeature != null)
+                    var logger = context.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("GlobalExceptionHandler");
+
+                    var exceptionFeature = context.Features.Get<IExceptionHandlerFeature>();
+
+                    var exception = exceptionFeature?.Error;
+
+                    var traceId = context.TraceIdentifier;
+
+                    logger.LogError(exception, "Erro nao tratado. TraceId: {traceId}", traceId);
+
+
+                    context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+
+                    context.Response.ContentType = "application/problem+json";
+
+                    var response = new
                     {
-                        await context.Response.WriteAsync(new ErrorDetails()
-                        {
-                            StatusCode = context.Response.StatusCode,
-                            Message = "Ocorreu um erro interno",
-                            Trace = "...."
-                        }.ToString());
-                    }
+                        type = "https://httpstatuses.com/500",
+                        title = "Erro interno do servidor",
+                        status = 500,
+                        traceId
+                    };
+
+                    await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+
                 });
             });
         }

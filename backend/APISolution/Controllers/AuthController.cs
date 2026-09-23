@@ -31,10 +31,11 @@ namespace APISolution.Controllers
         private readonly ILogger<AuthController> _logger;
         private IUsuarioServices _userServices;
         private readonly JwtOptions _jwtOptions;
+        private readonly SignInManager<Usuario> _signInManager;
 
 
 
-        public AuthController(ITokenService token, UserManager<Usuario> user, RoleManager<IdentityRole> role, ILogger<AuthController> logger, IUsuarioServices userServices, IOptions<JwtOptions> jwtOptions)
+        public AuthController(ITokenService token, UserManager<Usuario> user, RoleManager<IdentityRole> role, ILogger<AuthController> logger, IUsuarioServices userServices, IOptions<JwtOptions> jwtOptions, SignInManager<Usuario> signInManager)
         {
             _token = token;
             _user = user;
@@ -42,6 +43,7 @@ namespace APISolution.Controllers
             _logger = logger;
             _userServices = userServices;
             _jwtOptions = jwtOptions.Value;
+            _signInManager = signInManager;
         }
 
         private static string HashRefreshToken(string refreshToken)
@@ -58,25 +60,29 @@ namespace APISolution.Controllers
         [HttpPost("CreateRole")]
         public async Task<IActionResult> CreateRole(string roleName)
         {
-            var roleExist = await _role.RoleExistsAsync(roleName);
+            var roleExists = await _role.RoleExistsAsync(roleName);
 
-            if (!roleExist)
+            if (roleExists)
             {
-                var roleResult = await _role.CreateAsync(new IdentityRole(roleName));
-
-                if (roleResult.Succeeded)
-                {
-                    _logger.LogInformation(1, "Roles Added");
-                    return StatusCode(StatusCodes.Status201Created, $"Status: Success; Message: Role {roleName} added successfully");
-                }
-                else
-                {
-                    _logger.LogInformation(2, "Error");
-                    return StatusCode(StatusCodes.Status400BadRequest, $"Status: Error; Message: Issue adding the new {roleName} role");
-                }
+                return BadRequest($"Status: Error; Message: Role {roleName} já existe");
             }
-            return StatusCode(StatusCodes.Status400BadRequest, $"Status: Error; Message: Role {roleName} já existe");
+
+            var roleResult = await _role.CreateAsync(new IdentityRole(roleName));
+
+            if (roleResult.Succeeded)
+            {
+                _logger.LogInformation("Role {RoleName} adicionada", roleName);
+
+                return StatusCode(StatusCodes.Status201Created,
+                    $"Status: Success; Message: Role {roleName} added successfully");
+            }
+
+            _logger.LogError("Falha ao adicionar a role {RoleName}", roleName);
+
+            return BadRequest( $"Status: Error; Message: Issue adding the new {roleName} role");
         }
+
+
 
 
         [Authorize(Policy = "Super")]
@@ -87,6 +93,13 @@ namespace APISolution.Controllers
 
             if (user != null)
             {
+
+                if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(roleName))
+                {
+                    return BadRequest("E-mail e nome da role são obrigatórios.");
+                }
+
+
                 var exist = await _user.IsInRoleAsync(user, roleName);
 
                 if (exist)
@@ -112,7 +125,7 @@ namespace APISolution.Controllers
             }
             else
             {
-                return StatusCode(StatusCodes.Status400BadRequest, $"Status: Error; Message: {user.Email} não foi encontrado ou nao existe.");
+                return BadRequest("Usuário não encontrado.");
             }
         }
 
@@ -128,9 +141,21 @@ namespace APISolution.Controllers
                 return Unauthorized();
             }
 
-            if (!await _user.CheckPasswordAsync(user, model.Password!))
+            var passwordResult = await _signInManager.CheckPasswordSignInAsync(
+                         user,
+                         model.Password!,
+                         lockoutOnFailure: true);
+
+            if (passwordResult.IsLockedOut)
             {
-                return Unauthorized();
+                _logger.LogWarning("Usuário bloqueado após tentativas inválidas: {UserId}", user.Id);
+
+                return Unauthorized("Usuário temporariamente bloqueado.");
+            }
+
+            if (!passwordResult.Succeeded)
+            {
+                return Unauthorized("Usuário ou senha inválidos.");
             }
 
             var userRoles = await _user.GetRolesAsync(user);            

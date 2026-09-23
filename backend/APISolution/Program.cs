@@ -17,6 +17,7 @@ using Infraestrutura.ContextRepository;
 using Infraestrutura.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
@@ -25,6 +26,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Serilog;
+using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography.Xml;
 using System.Text;
@@ -37,6 +39,39 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddEndpointsApiExplorer();
+
+
+
+
+static string RequiredConfiguration(IConfiguration configuration, string key)
+{
+    var value = configuration[key];
+
+    if (string.IsNullOrWhiteSpace(value))
+    {
+        throw new InvalidOperationException(
+            $"Configuração obrigatória ausente: {key}");
+    }
+
+    return value;
+}
+
+var connectionString = RequiredConfiguration(builder.Configuration,
+    "ConnectionStrings:ConexaoPadrao");
+
+var superAdminUserId = RequiredConfiguration(
+    builder.Configuration,
+    "SuperAdmin:UserId");
+
+
+
+
+
+builder.Services.AddDbContext<ApiContext>(options =>
+    options.UseSqlServer(connectionString));
+
+
+
 
 
 var allowedOrigins = builder.Configuration
@@ -90,33 +125,45 @@ var myOptions = new MyRateLimitOptions();
 builder.Configuration.GetSection(MyRateLimitOptions.MyRateLimit).Bind(myOptions);
 
 
+if (myOptions.PermitLimit <= 0)
+{
+    throw new InvalidOperationException(
+        "MyRateLimit:PermitLimit deve ser maior que zero.");
+}
+
+if (myOptions.Window <= 0)
+{
+    throw new InvalidOperationException(
+        "MyRateLimit:Window deve ser maior que zero.");
+}
+
+if (myOptions.QueueLimit < 0)
+{
+    throw new InvalidOperationException(
+        "MyRateLimit:QueueLimit não pode ser negativo.");
+}
+
+
+
+
 // rate limite global
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpcontext => RateLimitPartition.GetFixedWindowLimiter(
-                                        partitionKey: httpcontext.Connection.RemoteIpAddress?.ToString() ?? "unknown",                
-                    factory: _ => new FixedWindowRateLimiterOptions
-                    {
-                        AutoReplenishment = myOptions.AutoReplenishment,
-                        PermitLimit = myOptions.PermitLimit,
-                        QueueLimit = myOptions.QueueLimit,
-                        Window = TimeSpan.FromSeconds(myOptions.Window)
-                    }));
+                        partitionKey:httpcontext.Connection.RemoteIpAddress?.ToString()?? "unknown",
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            AutoReplenishment = myOptions.AutoReplenishment,
+                            PermitLimit = myOptions.PermitLimit,
+                            QueueLimit = myOptions.QueueLimit,
+                            Window = TimeSpan.FromSeconds(myOptions.Window)
+                        }));
 });
 
 
 
-
-
-var connectionString = builder.Configuration
-    .GetConnectionString("ConexaoPadrao")
-    ?? throw new InvalidOperationException(
-        "Connection string 'ConexaoPadrao' não encontrada.");
-
-builder.Services.AddDbContext<ApiContext>(options =>
-    options.UseSqlServer(connectionString));
 
 
 
@@ -250,12 +297,6 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
 
 
 
-
-var superAdminUserId = builder.Configuration["SuperAdmin:UserId"]
-    ?? throw new InvalidOperationException("SuperAdmin:UserId não configurado.");
-
-
-
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("Admin", policy => policy.RequireRole("Admin", "SuperAdmin"));
@@ -331,7 +372,18 @@ builder.Services.AddSwaggerGen(c =>
 
 
 
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders =
+        ForwardedHeaders.XForwardedFor |
+        ForwardedHeaders.XForwardedProto;
 
+    // Substitua pelo IP real do seu proxy reverso.
+    // Não use KnownNetworks.Clear() ou KnownProxies.Clear()
+    // sem saber exatamente o que está fazendo.
+    options.KnownProxies.Add(
+        IPAddress.Parse("IP_DO_SEU_PROXY"));
+});
 
 
 
@@ -340,11 +392,14 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-app.ConfigureExceptionMiddlewareExtensions(); 
+app.ConfigureExceptionMiddlewareExtensions();
+
+app.UseForwardedHeaders();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    app.UseHsts();
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
@@ -353,6 +408,7 @@ if (app.Environment.IsDevelopment())
             "APISolution v1");
     });
 }
+
 
 
 app.UseHttpsRedirection();

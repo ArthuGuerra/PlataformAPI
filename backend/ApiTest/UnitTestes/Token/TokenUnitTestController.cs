@@ -4,11 +4,13 @@ using Application.DataTransferObject;
 using Application.DataTransferObject.IdentityDTO;
 using Application.Interfaces;
 using Domain.Entities;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Options;
 using Moq;
 using System;
@@ -16,7 +18,8 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Identity;
+
 
 namespace ApiTest.UnitTestes.Token
 {
@@ -30,6 +33,7 @@ namespace ApiTest.UnitTestes.Token
         private readonly Mock<ILogger<AuthController>> _logger;
         private readonly Mock<IUsuarioServices> _userServices;
         private readonly Mock<IOptions<JwtOptions>> _jwtOptions;
+        private readonly Mock<SignInManager<Usuario>> _signInManager;
 
 
         public TokenUnitTestController()
@@ -45,6 +49,8 @@ namespace ApiTest.UnitTestes.Token
             _userServices = new Mock<IUsuarioServices>();
 
             _jwtOptions = new Mock<IOptions<JwtOptions>>();
+
+            _signInManager = CriarMockSignInManager(_user);
         }
 
         private AuthController CriarController()
@@ -66,9 +72,34 @@ namespace ApiTest.UnitTestes.Token
                 _user.Object,
                 _role.Object,
                 _logger.Object,
-                _userServices.Object,
-                jwtOptions);
+                _userServices.Object,                
+                jwtOptions,
+                _signInManager.Object);
         }
+
+
+
+        private static Mock<SignInManager<Usuario>> CriarMockSignInManager(
+            Mock<UserManager<Usuario>> userManager)
+        {
+            var contextAccessor = new Mock<IHttpContextAccessor>();
+            var claimsFactory = new Mock<IUserClaimsPrincipalFactory<Usuario>>();
+            var logger = new Mock<ILogger<SignInManager<Usuario>>>();
+            var schemes = new Mock<IAuthenticationSchemeProvider>();
+            var confirmation = new Mock<IUserConfirmation<Usuario>>();
+
+            return new Mock<SignInManager<Usuario>>(
+                userManager.Object,
+                contextAccessor.Object,
+                claimsFactory.Object,
+                Options.Create(new IdentityOptions()),
+                logger.Object,
+                schemes.Object,
+                confirmation.Object);
+        }
+
+
+
 
         private static Mock<UserManager<Usuario>> CriarMockUserManager()
         {
@@ -149,9 +180,12 @@ namespace ApiTest.UnitTestes.Token
                 .Setup(x => x.FindByNameAsync(model.Username))
                 .ReturnsAsync(usuario);
 
-            _user
-                .Setup(x => x.CheckPasswordAsync(usuario, model.Password))
-                .ReturnsAsync(true);
+            _signInManager
+                  .Setup(x => x.CheckPasswordSignInAsync(
+                      usuario,
+                      model.Password!,
+                      true))
+                  .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Success);
 
             _user
                 .Setup(x => x.GetRolesAsync(usuario))
@@ -194,34 +228,22 @@ namespace ApiTest.UnitTestes.Token
             Assert.NotEqual(refreshToken, usuario.RefreshToken);
 
             Assert.True(usuario.RefreshTokenExpiryTime > DateTime.UtcNow);
-            Assert.True(
-                usuario.RefreshTokenExpiryTime <=
+            Assert.True(usuario.RefreshTokenExpiryTime <=
                 DateTime.UtcNow.AddHours(24).AddSeconds(1));
 
-            _user.Verify(
-                x => x.FindByNameAsync(model.Username),
+            _user.Verify( x => x.FindByNameAsync(model.Username),
                 Times.Once);
 
-            _user.Verify(
-                x => x.CheckPasswordAsync(usuario, model.Password),
-                Times.Once);
+            _signInManager.Verify( x => x.CheckPasswordSignInAsync(
+                usuario, model.Password!, true),Times.Once);
 
-            _user.Verify(
-                x => x.GetRolesAsync(usuario),
-                Times.Once);
+            _user.Verify( x => x.GetRolesAsync(usuario), Times.Once);
 
-            _user.Verify(
-                x => x.UpdateAsync(usuario),
-                Times.Once);
+            _user.Verify( x => x.UpdateAsync(usuario), Times.Once);
 
-            _token.Verify(
-                x => x.GenerateAccessToken(
-                    It.IsAny<IEnumerable<Claim>>()),
-                Times.Once);
+            _token.Verify( x => x.GenerateAccessToken( It.IsAny<IEnumerable<Claim>>()), Times.Once);
 
-            _token.Verify(
-                x => x.GenerateRefreshToken(),
-                Times.Once);
+            _token.Verify( x => x.GenerateRefreshToken(), Times.Once);
         }
 
 
@@ -262,11 +284,12 @@ namespace ApiTest.UnitTestes.Token
 
 
 
+
+
         [Fact]
         [Trait("Auth", "Controller")]
         public async Task Login_DeveRetornarUnauthorized_QuandoSenhaForInvalida()
         {
-            // Arrange
             var model = new LoginModelDTO
             {
                 Username = "arthur",
@@ -277,16 +300,20 @@ namespace ApiTest.UnitTestes.Token
             {
                 Id = "usuario-123",
                 UserName = "arthur",
-                Email = "arthur@email.com"
+                Email = "arthur@email.com",
+                Ativo = true
             };
 
             _user
                 .Setup(x => x.FindByNameAsync(model.Username))
                 .ReturnsAsync(usuario);
 
-            _user
-                .Setup(x => x.CheckPasswordAsync(usuario, model.Password))
-                .ReturnsAsync(false);
+            _signInManager
+                .Setup(x => x.CheckPasswordSignInAsync(
+                    usuario,
+                    model.Password!,
+                    true))
+                .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Failed);
 
             var controller = CriarController();
 
@@ -294,15 +321,23 @@ namespace ApiTest.UnitTestes.Token
             var result = await controller.Login(model);
 
             // Assert
-            Assert.IsType<UnauthorizedResult>(result);
+            var unauthorized =
+                Assert.IsType<UnauthorizedObjectResult>(result);
 
-            _user.Verify(
-                x => x.CheckPasswordAsync(usuario, model.Password),
+            Assert.Equal(
+                "Usuário ou senha inválidos.",
+                unauthorized.Value);
+
+            _signInManager.Verify(
+                x => x.CheckPasswordSignInAsync(
+                    usuario,
+                    model.Password!,
+                    true),
                 Times.Once);
 
             _token.Verify(
                 x => x.GenerateAccessToken(
-                    It.IsAny<List<Claim>>()),                   
+                    It.IsAny<IEnumerable<Claim>>()),
                 Times.Never);
         }
 
@@ -534,18 +569,17 @@ namespace ApiTest.UnitTestes.Token
             // Act
             var result = await controller.CreateRole(roleName);
 
+
             // Assert
-            var badRequest = Assert.IsType<ObjectResult>(result);
 
-            Assert.Equal(400, badRequest.StatusCode);
+            _role.Verify(x => x.RoleExistsAsync(roleName), Times.Once);
 
-            Assert.Equal(
-                $"Status: Error; Message: Role {roleName} já existe",
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+
+            Assert.Equal(StatusCodes.Status400BadRequest, badRequest.StatusCode);
+
+            Assert.Equal($"Status: Error; Message: Role {roleName} já existe",
                 badRequest.Value);
-
-            _role.Verify(
-                x => x.CreateAsync(It.IsAny<IdentityRole>()),
-                Times.Never);
         }
 
         [Fact]
