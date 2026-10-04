@@ -2,7 +2,6 @@ using APISolution.Filter;
 using APISolution.MiddlawareException;
 using APISolution.MyRateLimit;
 using Application.Configuration;
-using Application.Configuration;
 using Application.DataTransferObject;
 using Application.Interfaces;
 using Application.InterfacesApp;
@@ -168,10 +167,24 @@ builder.Services.AddRateLimiter(options =>
 
 
 
+builder.Services
+    .AddIdentity<Usuario, IdentityRole>(options =>
+    {
+        options.User.RequireUniqueEmail = true;
 
+        options.Password.RequiredLength = 8;
+        options.Password.RequireDigit = true;
+        options.Password.RequireUppercase = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireNonAlphanumeric = false;
 
-builder.Services.AddIdentity<Usuario, IdentityRole>().AddEntityFrameworkStores<ApiContext>().AddDefaultTokenProviders();
-
+        options.Lockout.AllowedForNewUsers = true;
+        options.Lockout.MaxFailedAccessAttempts = 5;
+        options.Lockout.DefaultLockoutTimeSpan =
+            TimeSpan.FromMinutes(15);
+    })
+    .AddEntityFrameworkStores<ApiContext>()
+    .AddDefaultTokenProviders();
 
 
 
@@ -372,6 +385,8 @@ builder.Services.AddSwaggerGen(c =>
 
 
 
+// Se você publicar no Azure App Service ou outro serviço que já gerencia HTTPS //diretamente, você pode remover temporariamente toda esta configuração:
+
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders =
@@ -394,12 +409,13 @@ var app = builder.Build();
 
 app.ConfigureExceptionMiddlewareExtensions();
 
+// se remover acima, remover esse tambem
 app.UseForwardedHeaders();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseHsts();
+    
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
@@ -407,6 +423,13 @@ if (app.Environment.IsDevelopment())
             "/swagger/v1/swagger.json",
             "APISolution v1");
     });
+}
+
+
+if( app.Environment.IsProduction())
+{
+    app.UseHsts();
+
 }
 
 
