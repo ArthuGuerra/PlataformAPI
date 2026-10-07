@@ -47,20 +47,11 @@ namespace ApiTest.UnitTestes.Usuarios
                 null,
                 null
             );
-
-            var roleStore = new Mock<IRoleStore<IdentityRole>>();
-
-            var role = new Mock<RoleManager<IdentityRole>>(
-                roleStore.Object,
-                null,
-                null,
-                null,
-                null
-            );
+          
 
             userRepo.Setup(r => r.UsuariosRepository.GetAllAsync()).ReturnsAsync(users);
 
-            var services = new UsuariosServices(userRepo.Object, _mapper, userMan.Object, role.Object);
+            var services = new UsuariosServices(userRepo.Object, _mapper, userMan.Object);
 
 
             // Act
@@ -100,20 +91,11 @@ namespace ApiTest.UnitTestes.Usuarios
                 null,
                 null
             );
-
-            var roleStore = new Mock<IRoleStore<IdentityRole>>();
-
-            var role = new Mock<RoleManager<IdentityRole>>(
-                roleStore.Object,
-                null,
-                null,
-                null,
-                null
-            );
+          
 
             userRepo.Setup(r => r.UsuariosRepository.GetAllAtivosAsync()).ReturnsAsync(users);
 
-            var services = new UsuariosServices(userRepo.Object, _mapper, userMan.Object, role.Object);
+            var services = new UsuariosServices(userRepo.Object, _mapper, userMan.Object);
 
 
             // Act
@@ -152,20 +134,11 @@ namespace ApiTest.UnitTestes.Usuarios
                 null,
                 null
             );
-
-            var roleStore = new Mock<IRoleStore<IdentityRole>>();
-
-            var role = new Mock<RoleManager<IdentityRole>>(
-                roleStore.Object,
-                null,
-                null,
-                null,
-                null
-            );
+           
 
             userMan.Setup(u => u.FindByNameAsync(user.UserName)).ReturnsAsync(user);
 
-            var services = new UsuariosServices(userRepo.Object, _mapper, userMan.Object, role.Object);
+            var services = new UsuariosServices(userRepo.Object, _mapper, userMan.Object);
 
 
             // Act
@@ -204,20 +177,11 @@ namespace ApiTest.UnitTestes.Usuarios
                 null,
                 null
             );
-
-            var roleStore = new Mock<IRoleStore<IdentityRole>>();
-
-            var role = new Mock<RoleManager<IdentityRole>>(
-                roleStore.Object,
-                null,
-                null,
-                null,
-                null
-            );
+           
 
             userMan.Setup(u => u.FindByIdAsync(user.Id)).ReturnsAsync(user);
 
-            var services = new UsuariosServices(userRepo.Object, _mapper, userMan.Object, role.Object);
+            var services = new UsuariosServices(userRepo.Object, _mapper, userMan.Object);
 
 
             // Act
@@ -260,15 +224,7 @@ namespace ApiTest.UnitTestes.Usuarios
                 null,
                 null,
                 null);
-
-            var roleStore = new Mock<IRoleStore<IdentityRole>>();
-
-            var roleManager = new Mock<RoleManager<IdentityRole>>(
-                roleStore.Object,
-                null,
-                null,
-                null,
-                null);
+           
 
             var unitOfWork = new Mock<IUnitOfWork>();
 
@@ -293,8 +249,7 @@ namespace ApiTest.UnitTestes.Usuarios
             var service = new UsuariosServices(
                 unitOfWork.Object,
                 _mapper,
-                userManager.Object,
-                roleManager.Object);
+                userManager.Object );
 
             // Act
             var result = await service.UpdateUsers(user.Id, dto);
@@ -357,15 +312,7 @@ namespace ApiTest.UnitTestes.Usuarios
                 null,
                 null,
                 null);
-
-            var roleStore = new Mock<IRoleStore<IdentityRole>>();
-
-            var roleManager = new Mock<RoleManager<IdentityRole>>(
-                roleStore.Object,
-                null,
-                null,
-                null,
-                null);
+           
 
             var unitOfWork = new Mock<IUnitOfWork>();
 
@@ -384,8 +331,7 @@ namespace ApiTest.UnitTestes.Usuarios
             var service = new UsuariosServices(
                 unitOfWork.Object,
                 _mapper,
-                userManager.Object,
-                roleManager.Object);
+                userManager.Object );
 
             // Act
             var result = await service.UpdateUsers(user.Id, dto);
@@ -427,17 +373,7 @@ namespace ApiTest.UnitTestes.Usuarios
                 null,
                 null,
                 null
-            );
-
-            var roleStore = new Mock<IRoleStore<IdentityRole>>();
-
-            var role = new Mock<RoleManager<IdentityRole>>(
-                roleStore.Object,
-                null,
-                null,
-                null,
-                null
-            );
+            );           
 
             userMan.Setup(u => u.FindByIdAsync(user.Id)).ReturnsAsync(user);
 
@@ -448,7 +384,7 @@ namespace ApiTest.UnitTestes.Usuarios
 
             // Act
 
-            var services = new UsuariosServices(userRepo.Object, _mapper, userMan.Object, role.Object);
+            var services = new UsuariosServices(userRepo.Object, _mapper, userMan.Object);
 
             var result = await services.UpdateUsers(user.Id, map);
 
@@ -503,17 +439,7 @@ namespace ApiTest.UnitTestes.Usuarios
                 null,
                 null,
                 null
-            );
-
-            var roleStore = new Mock<IRoleStore<IdentityRole>>();
-
-            var role = new Mock<RoleManager<IdentityRole>>(
-                roleStore.Object,
-                null,
-                null,
-                null,
-                null
-            );
+            );          
            
 
             userRepo.Setup(r => r.UsuariosRepository.GetAllAsync()).ReturnsAsync(users);
@@ -522,7 +448,7 @@ namespace ApiTest.UnitTestes.Usuarios
             
            
 
-            var services = new UsuariosServices(userRepo.Object, _mapper, userMan.Object, role.Object);
+            var services = new UsuariosServices(userRepo.Object, _mapper, userMan.Object);
 
 
             // Act
@@ -577,17 +503,7 @@ namespace ApiTest.UnitTestes.Usuarios
                 null,
                 null,
                 null
-            );
-
-            var roleStore = new Mock<IRoleStore<IdentityRole>>();
-
-            var role = new Mock<RoleManager<IdentityRole>>(
-                roleStore.Object,
-                null,
-                null,
-                null,
-                null
-            );
+            );           
             
 
             userRepo.Setup(u => u.UsuariosRepository.GetUsuarioInscricao()).ReturnsAsync(users);
@@ -595,7 +511,7 @@ namespace ApiTest.UnitTestes.Usuarios
 
             // Act
 
-            var services = new UsuariosServices(userRepo.Object, _mapper, userMan.Object, role.Object);
+            var services = new UsuariosServices(userRepo.Object, _mapper, userMan.Object);
 
             var result = await services.UsuarioInscricao();
 
@@ -618,8 +534,7 @@ namespace ApiTest.UnitTestes.Usuarios
                 .Without(x => x.InscricoesApp)
                 .Create();
 
-            var pass = _fix.Build<UsuarioSenhaDTO>()                
-                .Create();
+            var pass = _fix.Build<ChangePassDTO>().Create();
 
 
             var userRepo = new Mock<IUnitOfWork>();
@@ -635,40 +550,27 @@ namespace ApiTest.UnitTestes.Usuarios
                 null,
                 null,
                 null
-            );
-
-            var roleStore = new Mock<IRoleStore<IdentityRole>>();
-
-            var role = new Mock<RoleManager<IdentityRole>>(
-                roleStore.Object,
-                null,
-                null,
-                null,
-                null
-            );
+            );        
 
 
-            userMan.Setup(u => u.FindByEmailAsync(user.Email)).ReturnsAsync(user);
+            userMan.Setup(u => u.FindByEmailAsync(pass.Email)).ReturnsAsync(user);
 
             userMan.Setup(u => u.ChangePasswordAsync(user, pass.SenhaAtual, pass.NewSenha)).ReturnsAsync(IdentityResult.Success);
 
 
-
             // Act
 
-            var services = new UsuariosServices(userRepo.Object, _mapper, userMan.Object, role.Object);
+            var services = new UsuariosServices(userRepo.Object, _mapper, userMan.Object);
 
-            var result = await services.UpdateSenha(user.Email, pass);
-
+            var result = await services.UpdateSenha(pass);
 
             // Assert
 
-            userMan.Verify(u => u.FindByEmailAsync(user.Email),Times.Once);
+            userMan.Verify(u => u.FindByEmailAsync(pass.Email),Times.Once);
 
             userMan.Verify(u => u.ChangePasswordAsync(user, pass.SenhaAtual, pass.NewSenha), Times.Once);
 
             Assert.True(result);
-
 
 
         }

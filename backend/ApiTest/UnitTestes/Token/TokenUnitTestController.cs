@@ -176,36 +176,31 @@ namespace ApiTest.UnitTestes.Token
 
             var refreshToken = "refresh-token-teste";
 
+            _userServices
+                .Setup(x => x.NormalizeNome(It.IsAny<string>()))
+                .Returns<string>(valor => valor);
+
             _user
                 .Setup(x => x.FindByNameAsync(model.Username))
                 .ReturnsAsync(usuario);
 
             _signInManager
-                  .Setup(x => x.CheckPasswordSignInAsync(
-                      usuario,
-                      model.Password!,
-                      true))
-                  .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Success);
+                .Setup(x => x.CheckPasswordSignInAsync(
+                    usuario,
+                    model.Password!,
+                    false))
+                .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Success);
 
             _user
                 .Setup(x => x.GetRolesAsync(usuario))
                 .ReturnsAsync(new List<string> { "User" });
 
             _user
-                .Setup(x => x.GetRolesAsync(It.IsAny<Usuario>()))
-                .ReturnsAsync(new List<string> { "User" });
-
-            _user
                 .Setup(x => x.UpdateAsync(usuario))
                 .ReturnsAsync(IdentityResult.Success);
 
-            _user
-                .Setup(x => x.UpdateAsync(It.IsAny<Usuario>()))
-                .ReturnsAsync(IdentityResult.Success);
-
             _token
-                .Setup(x => x.GenerateAccessToken(
-                    It.IsAny<IEnumerable<Claim>>()))
+                .Setup(x => x.GenerateAccessToken(It.IsAny<IEnumerable<Claim>>()))
                 .Returns(jwtToken);
 
             _token
@@ -231,20 +226,23 @@ namespace ApiTest.UnitTestes.Token
             Assert.True(usuario.RefreshTokenExpiryTime <=
                 DateTime.UtcNow.AddHours(24).AddSeconds(1));
 
-            _user.Verify( x => x.FindByNameAsync(model.Username),
+            _user.Verify(x => x.FindByNameAsync(model.Username), Times.Once);
+
+            _signInManager.Verify(
+                x => x.CheckPasswordSignInAsync(usuario, model.Password!, false),
                 Times.Once);
 
-            _signInManager.Verify( x => x.CheckPasswordSignInAsync(
-                usuario, model.Password!, true),Times.Once);
+            _user.Verify(x => x.GetRolesAsync(usuario), Times.Once);
 
-            _user.Verify( x => x.GetRolesAsync(usuario), Times.Once);
+            _user.Verify(x => x.UpdateAsync(usuario), Times.Once);
 
-            _user.Verify( x => x.UpdateAsync(usuario), Times.Once);
+            _token.Verify(
+                x => x.GenerateAccessToken(It.IsAny<IEnumerable<Claim>>()),
+                Times.Once);
 
-            _token.Verify( x => x.GenerateAccessToken( It.IsAny<IEnumerable<Claim>>()), Times.Once);
-
-            _token.Verify( x => x.GenerateRefreshToken(), Times.Once);
+            _token.Verify(x => x.GenerateRefreshToken(), Times.Once);
         }
+
 
 
 
@@ -259,6 +257,10 @@ namespace ApiTest.UnitTestes.Token
                 Password = "123456"
             };
 
+            _userServices
+                .Setup(x => x.NormalizeNome(It.IsAny<string>()))
+                .Returns<string>(valor => valor);
+
             _user
                 .Setup(x => x.FindByNameAsync(model.Username))
                 .ReturnsAsync((Usuario?)null);
@@ -269,20 +271,19 @@ namespace ApiTest.UnitTestes.Token
             var result = await controller.Login(model);
 
             // Assert
-            Assert.IsType<UnauthorizedResult>(result);
+            var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result);
 
-            _user.Verify(
-                x => x.FindByNameAsync(model.Username),
-                Times.Once);
+            Assert.Equal("Usuário ou senha inválidos.", unauthorized.Value);
 
-            _user.Verify(
-                x => x.CheckPasswordAsync(
+            _user.Verify(x => x.FindByNameAsync(model.Username), Times.Once);
+
+            _signInManager.Verify(
+                x => x.CheckPasswordSignInAsync(
                     It.IsAny<Usuario>(),
-                    It.IsAny<string>()),
+                    It.IsAny<string>(),
+                    It.IsAny<bool>()),
                 Times.Never);
         }
-
-
 
 
 
@@ -290,6 +291,7 @@ namespace ApiTest.UnitTestes.Token
         [Trait("Auth", "Controller")]
         public async Task Login_DeveRetornarUnauthorized_QuandoSenhaForInvalida()
         {
+            // Arrange
             var model = new LoginModelDTO
             {
                 Username = "arthur",
@@ -304,6 +306,10 @@ namespace ApiTest.UnitTestes.Token
                 Ativo = true
             };
 
+            _userServices
+                .Setup(x => x.NormalizeNome(It.IsAny<string>()))
+                .Returns<string>(valor => valor);
+
             _user
                 .Setup(x => x.FindByNameAsync(model.Username))
                 .ReturnsAsync(usuario);
@@ -312,7 +318,7 @@ namespace ApiTest.UnitTestes.Token
                 .Setup(x => x.CheckPasswordSignInAsync(
                     usuario,
                     model.Password!,
-                    true))
+                    false))
                 .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Failed);
 
             var controller = CriarController();
@@ -321,23 +327,16 @@ namespace ApiTest.UnitTestes.Token
             var result = await controller.Login(model);
 
             // Assert
-            var unauthorized =
-                Assert.IsType<UnauthorizedObjectResult>(result);
+            var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result);
 
-            Assert.Equal(
-                "Usuário ou senha inválidos.",
-                unauthorized.Value);
+            Assert.Equal("Usuário ou senha inválidos.", unauthorized.Value);
 
             _signInManager.Verify(
-                x => x.CheckPasswordSignInAsync(
-                    usuario,
-                    model.Password!,
-                    true),
+                x => x.CheckPasswordSignInAsync(usuario, model.Password!, false),
                 Times.Once);
 
             _token.Verify(
-                x => x.GenerateAccessToken(
-                    It.IsAny<IEnumerable<Claim>>()),
+                x => x.GenerateAccessToken(It.IsAny<IEnumerable<Claim>>()),
                 Times.Never);
         }
 
@@ -400,6 +399,7 @@ namespace ApiTest.UnitTestes.Token
                 Times.Once);
         }
 
+
         [Fact]
         [Trait("Auth", "Controller")]
         public async Task Register_DeveRetornarBadRequest_QuandoUsuarioJaExistir()
@@ -420,8 +420,7 @@ namespace ApiTest.UnitTestes.Token
                 CPF = "12345678900"
             };
 
-            _userServices
-                .Setup(x => x.GetAllUsers())
+            _userServices.Setup(x => x.GetAllUsers())
                 .ReturnsAsync(new List<UsuarioPrintDTO>
                 {
                     usuarioExistente
@@ -439,9 +438,7 @@ namespace ApiTest.UnitTestes.Token
             // Assert
             var badRequest = Assert.IsType<BadRequestObjectResult>(result);
 
-            Assert.Equal(
-                "Usuario, Email ou CPF existente!",
-                badRequest.Value);
+            Assert.Equal("Não foi possível concluir o cadastro.",     badRequest.Value);
 
             _user.Verify(
                 x => x.CreateAsync(
@@ -452,9 +449,10 @@ namespace ApiTest.UnitTestes.Token
 
 
 
+
         [Fact]
         [Trait("Auth", "Controller")]
-        public async Task Register_DeveRetornarInternalServerError_QuandoCreateFalhar()
+        public async Task Register_DeveRetornarBadRequest_QuandoCreateFalhar()
         {
             // Arrange
             var model = new RegisterModelDTO
@@ -474,11 +472,8 @@ namespace ApiTest.UnitTestes.Token
                 .Returns<string>(valor => valor.ToLower());
 
             _user
-                .Setup(x => x.CreateAsync(
-                    It.IsAny<Usuario>(),
-                    model.Password))
-                .ReturnsAsync(
-                    IdentityResult.Failed(
+                .Setup(x => x.CreateAsync(It.IsAny<Usuario>(),
+                    model.Password)).ReturnsAsync(IdentityResult.Failed(
                         new IdentityError
                         {
                             Code = "PasswordTooShort",
@@ -491,23 +486,15 @@ namespace ApiTest.UnitTestes.Token
             var result = await controller.Register(model);
 
             // Assert
-            var statusCodeResult = Assert.IsType<StatusCodeResult>(result);
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
 
-            Assert.Equal(
-                StatusCodes.Status500InternalServerError,
-                statusCodeResult.StatusCode);
+            Assert.NotNull(badRequest.Value);
 
-            _user.Verify(
-                x => x.CreateAsync(
-                    It.IsAny<Usuario>(),
-                    model.Password),
-                Times.Once);
+            _user.Verify(x => x.CreateAsync(It.IsAny<Usuario>(),
+                    model.Password),Times.Once);
 
-            _user.Verify(
-                x => x.AddToRoleAsync(
-                    It.IsAny<Usuario>(),
-                    "User"),
-                Times.Never);
+            _user.Verify(x => x.AddToRoleAsync(It.IsAny<Usuario>(),
+                    "User"),Times.Never);
         }
 
 
@@ -587,31 +574,36 @@ namespace ApiTest.UnitTestes.Token
         public async Task AddUserRole_DeveRetornarCreated_QuandoUsuarioForAdicionado()
         {
             // Arrange
-            var email = "arthur@email.com";
-            var roleName = "User";
+
+            var user = new AddUserToRoleDTO
+            {
+                RoleName = "User",
+                Email = "arthur@email.com"
+            };
+
 
             var usuario = new Usuario
             {
-                Email = email,
+                Email = user.Email,
                 UserName = "arthur"
             };
 
             _user
-                .Setup(x => x.FindByEmailAsync(email))
+                .Setup(x => x.FindByEmailAsync(user.Email))
                 .ReturnsAsync(usuario);
 
             _user
-                .Setup(x => x.IsInRoleAsync(usuario, roleName))
+                .Setup(x => x.IsInRoleAsync(usuario, user.RoleName))
                 .ReturnsAsync(false);
 
             _user
-                .Setup(x => x.AddToRoleAsync(usuario, roleName))
+                .Setup(x => x.AddToRoleAsync(usuario, user.RoleName))
                 .ReturnsAsync(IdentityResult.Success);
 
             var controller = CriarController();
 
             // Act
-            var result = await controller.AddUserRole(email, roleName);
+            var result = await controller.AddUserRole(user);
 
             // Assert
             var objectResult = Assert.IsType<ObjectResult>(result);
@@ -619,15 +611,15 @@ namespace ApiTest.UnitTestes.Token
             Assert.Equal(201, objectResult.StatusCode);
 
             _user.Verify(
-                x => x.FindByEmailAsync(email),
+                x => x.FindByEmailAsync(user.Email),
                 Times.Once);
 
             _user.Verify(
-                x => x.IsInRoleAsync(usuario, roleName),
+                x => x.IsInRoleAsync(usuario, user.RoleName),
                 Times.Once);
 
             _user.Verify(
-                x => x.AddToRoleAsync(usuario, roleName),
+                x => x.AddToRoleAsync(usuario, user.RoleName),
                 Times.Once);
         }
 
@@ -636,33 +628,36 @@ namespace ApiTest.UnitTestes.Token
         public async Task AddUserRole_DeveRetornarBadRequest_QuandoUsuarioJaPossuirRole()
         {
             // Arrange
-            var email = "arthur@email.com";
-            var roleName = "User";
+            var user = new AddUserToRoleDTO
+            {
+                RoleName = "User",
+                Email = "arthur@email.com"
+            };
 
             var usuario = new Usuario
             {
-                Email = email,
+                Email = user.Email,
                 UserName = "arthur"
             };
 
             _user
-                .Setup(x => x.FindByEmailAsync(email))
+                .Setup(x => x.FindByEmailAsync(user.Email))
                 .ReturnsAsync(usuario);
 
             _user
-                .Setup(x => x.IsInRoleAsync(usuario, roleName))
+                .Setup(x => x.IsInRoleAsync(usuario, user.RoleName))
                 .ReturnsAsync(true);
 
             var controller = CriarController();
 
             // Act
-            var result = await controller.AddUserRole(email, roleName);
+            var result = await controller.AddUserRole(user);
 
             // Assert
             var badRequest = Assert.IsType<BadRequestObjectResult>(result);
 
             Assert.Equal(
-                $"Usuario: {usuario.Email} já possui a role {roleName}",
+                $"Usuário: {usuario.Email} já possui a role {user.RoleName}",
                 badRequest.Value);
 
             _user.Verify(
@@ -699,9 +694,7 @@ namespace ApiTest.UnitTestes.Token
             // Assert
             var badRequest = Assert.IsType<BadRequestObjectResult>(result);
 
-            Assert.Equal(
-                "Access/Refresh Token inválido",
-                badRequest.Value);
+            Assert.Equal("Access/Refresh token inválido",badRequest.Value);
         }
     }
 }

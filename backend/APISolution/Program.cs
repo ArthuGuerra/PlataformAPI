@@ -55,11 +55,12 @@ static string RequiredConfiguration(IConfiguration configuration, string key)
     return value;
 }
 
+
+
 var connectionString = RequiredConfiguration(builder.Configuration,
     "ConnectionStrings:ConexaoPadrao");
 
-var superAdminUserId = RequiredConfiguration(
-    builder.Configuration,
+var superAdminUserId = RequiredConfiguration(builder.Configuration,
     "SuperAdmin:UserId");
 
 
@@ -386,20 +387,19 @@ builder.Services.AddSwaggerGen(c =>
 
 
 // Se você publicar no Azure App Service ou outro serviço que já gerencia HTTPS //diretamente, você pode remover temporariamente toda esta configuração:
-
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders =
         ForwardedHeaders.XForwardedFor |
         ForwardedHeaders.XForwardedProto;
 
-    // Substitua pelo IP real do seu proxy reverso.
-    // Não use KnownNetworks.Clear() ou KnownProxies.Clear()
-    // sem saber exatamente o que está fazendo.
-    options.KnownProxies.Add(
-        IPAddress.Parse("IP_DO_SEU_PROXY"));
-});
+    var proxyIp = builder.Configuration["ForwardedHeaders:KnownProxy"];
 
+    if (!string.IsNullOrWhiteSpace(proxyIp))
+    {
+        options.KnownProxies.Add(IPAddress.Parse(proxyIp));
+    }
+});
 
 
 
@@ -409,14 +409,70 @@ var app = builder.Build();
 
 app.ConfigureExceptionMiddlewareExtensions();
 
+
+app.Use(async (context, next) =>
+{
+    context.Response.OnStarting(() =>
+    {
+        context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+        context.Response.Headers["Cross-Origin-Resource-Policy"] = "same-origin";
+
+        return Task.CompletedTask;
+    });
+
+    await next();
+});
+
+
+app.Use(async (context, next) =>
+{
+    var path = context.Request.Path.Value ?? string.Empty;
+
+    var endpointSensivel =
+        path.StartsWith("/api/v1/Auth", StringComparison.OrdinalIgnoreCase) ||
+        path.StartsWith("/api/Usuario", StringComparison.OrdinalIgnoreCase);
+
+    if (endpointSensivel)
+    {
+        context.Response.OnStarting(() =>
+        {
+            context.Response.Headers["Cache-Control"] =
+                "no-store, no-cache, must-revalidate, private";
+
+            context.Response.Headers["Pragma"] = "no-cache";
+            context.Response.Headers["Expires"] = "0";
+
+            return Task.CompletedTask;
+        });
+    }
+
+    await next();
+});
+
+
+
+
+
+
 // se remover acima, remover esse tambem
 app.UseForwardedHeaders();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || app.Environment.IsStaging())
 {
-    
-    app.UseSwagger();
+
+    app.UseSwagger(c =>
+    {
+        c.PreSerializeFilters.Add((swagger, httpReq) =>
+        {
+            httpReq.HttpContext.Response.Headers["Cache-Control"] =
+                "no-store, no-cache, must-revalidate, private";
+
+            httpReq.HttpContext.Response.Headers["Pragma"] = "no-cache";
+            httpReq.HttpContext.Response.Headers["Expires"] = "0";
+        });
+    });
+
     app.UseSwaggerUI(options =>
     {
         options.SwaggerEndpoint(

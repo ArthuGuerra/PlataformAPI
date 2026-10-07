@@ -15,7 +15,7 @@ namespace Application.Interfaces
         public Task<UsuarioPrintDTO> GetNomeUsers(string nome);
         public Task<bool> UpdateUsers(string id, UsuarioPrintDTO dto);
         public Task<bool> DeleteUsers(string id);
-        public Task<bool> UpdateSenha (string id, UsuarioSenhaDTO dto);
+        public Task<bool> UpdateSenha(ChangePassDTO dto);
         public Task<ICollection<UserRolesDTO>> ShowUsersRoles();
 
 

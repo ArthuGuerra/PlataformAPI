@@ -17,15 +17,13 @@ namespace Application.Services
     {
         private readonly IUnitOfWork _api;
         private readonly IMapper _mapper;
-        private readonly UserManager<Usuario> _user;
-        private readonly RoleManager<IdentityRole> _role;
+        private readonly UserManager<Usuario> _user;     
 
-        public UsuariosServices(IUnitOfWork api, IMapper mapper, UserManager<Usuario> user, RoleManager<IdentityRole> role)
+        public UsuariosServices(IUnitOfWork api, IMapper mapper, UserManager<Usuario> user)
         {
             _api = api;
             _mapper = mapper;
-            _user = user;
-            _role = role;
+            _user = user;           
         }
 
 
@@ -203,9 +201,9 @@ namespace Application.Services
             }
         }
 
-        public async Task<bool> UpdateSenha(string email,UsuarioSenhaDTO dto)
+        public async Task<bool> UpdateSenha(ChangePassDTO dto)
         {
-            var user = await _user.FindByEmailAsync(email);
+            var user = await _user.FindByEmailAsync(dto.Email);
 
             if(user != null)
             {
@@ -221,10 +219,9 @@ namespace Application.Services
             else
             {
                 return false;
-            }
-           
-          
-            
+            }                               
         }     
+
+
     }
 }

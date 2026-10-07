@@ -1,10 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Domain.AppEntities;
+﻿using Domain.AppEntities;
 using Domain.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Reflection.Emit;
+using System.Text;
 
 namespace Infraestrutura.BancoContexto
 {
@@ -25,6 +26,10 @@ namespace Infraestrutura.BancoContexto
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+
+            builder.Entity<Usuario>()
+            .HasIndex(usuario => usuario.CPF)
+            .IsUnique();
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Application.Configuration;
+using Application.DataTransferObject;
 using Application.DataTransferObject.IdentityDTO;
 using Application.Interfaces;
 using Asp.Versioning;
@@ -17,6 +18,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace APISolution.Controllers
 {
@@ -53,11 +55,17 @@ namespace APISolution.Controllers
                     Encoding.UTF8.GetBytes(refreshToken)));
         }
 
+        private static string NormalizarCpf(string? cpf)
+        {
+            return Regex.Replace(cpf ?? string.Empty, @"\D", "");
+        }
+
 
 
 
         [Authorize(Policy = "Super")]
         [HttpPost("CreateRole")]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         public async Task<IActionResult> CreateRole(string roleName)
         {
             var roleExists = await _role.RoleExistsAsync(roleName);
@@ -87,70 +95,79 @@ namespace APISolution.Controllers
 
         [Authorize(Policy = "Super")]
         [HttpPost("AddUserToRole")]
-        public async Task<IActionResult> AddUserRole(string email, string roleName)
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]    
+        public async Task<IActionResult> AddUserRole(AddUserToRoleDTO? dto)
         {
-            var user = await _user.FindByEmailAsync(email);
-
-            if (user != null)
+            if (dto is null ||
+                string.IsNullOrWhiteSpace(dto.Email) ||
+                string.IsNullOrWhiteSpace(dto.RoleName))
             {
-
-                if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(roleName))
-                {
-                    return BadRequest("E-mail e nome da role são obrigatórios.");
-                }
-
-
-                var exist = await _user.IsInRoleAsync(user, roleName);
-
-                if (exist)
-                {
-                    return BadRequest($"Usuario: {user.Email} já possui a role {roleName}");
-                }
-                else
-                {
-                    var result = await _user.AddToRoleAsync(user, roleName);
-
-                    if (result.Succeeded)
-                    {
-                        _logger.LogInformation(1, $"Usuário: {user.Email} foi adicionado a {roleName} role");
-
-                        return StatusCode(StatusCodes.Status201Created, $"Status: Success; Message: Usuário {user.Email} foi adicionado a {user.Email} foi adicionado a {roleName} role");
-                    }
-                    else
-                    {
-                        _logger.LogInformation(2, $"Error: Não foi possível adicionar {user.Email} a {roleName} role");
-                        return StatusCode(StatusCodes.Status400BadRequest, $"Status: Error; Message: Não foi possível adicionar {user.Email} a {roleName} role");
-                    }
-                }
+                return BadRequest("Falha ao completar essa operação");
             }
-            else
+
+            var user = await _user.FindByEmailAsync(dto.Email);
+
+            if (user is null)
             {
-                return BadRequest("Usuário não encontrado.");
+                return BadRequest("Falha ao completar essa operação");
             }
+
+            var jaPossuiRole = await _user.IsInRoleAsync(user, dto.RoleName);
+
+            if (jaPossuiRole)
+            {
+                return BadRequest($"Usuário: {user.Email} já possui a role {dto.RoleName}");
+            }
+
+            var result = await _user.AddToRoleAsync(user, dto.RoleName);
+
+            if (!result.Succeeded)
+            {
+                return BadRequest("Não foi possível adicionar a role ao usuário.");
+            }
+
+            _logger.LogInformation(
+                "Usuário {Email} foi adicionado à role {RoleName}",
+                user.Email,
+                dto.RoleName);
+
+            return StatusCode(
+                StatusCodes.Status201Created,
+                $"Usuário {user.Email} foi adicionado à role {dto.RoleName}.");
         }
 
 
 
         [HttpPost("Login")]
-        public async Task<IActionResult> Login(LoginModelDTO model)
+        [ResponseCache(NoStore = true,Location = ResponseCacheLocation.None)]
+        public async Task<IActionResult> Login(LoginModelDTO? model)
         {
-            var user = await _user.FindByNameAsync(model.Username!);
+            if (model is null ||
+                string.IsNullOrWhiteSpace(model.Username) ||
+                string.IsNullOrWhiteSpace(model.Password))
+            {
+                return BadRequest("Usuário e senha são obrigatórios.");
+            }
+
+            var user = await _user.FindByNameAsync(_userServices.NormalizeNome(model.Username));
 
             if (user is null || !user.Ativo)
             {
-                return Unauthorized();
+                return Unauthorized("Usuário ou senha inválidos.");
             }
 
             var passwordResult = await _signInManager.CheckPasswordSignInAsync(
-                         user,
-                         model.Password!,
-                         lockoutOnFailure: true);
+                user,
+                model.Password,
+                lockoutOnFailure: false);
 
             if (passwordResult.IsLockedOut)
             {
-                _logger.LogWarning("Usuário bloqueado após tentativas inválidas: {UserId}", user.Id);
+                _logger.LogWarning(
+                    "Usuário poderia ser bloqueado após tentativas inválidas: {UserId}",
+                    user.Id);
 
-                return Unauthorized("Usuário temporariamente bloqueado.");
+                return Unauthorized("Usuário ou senha inválidos.");
             }
 
             if (!passwordResult.Succeeded)
@@ -158,13 +175,13 @@ namespace APISolution.Controllers
                 return Unauthorized("Usuário ou senha inválidos.");
             }
 
-            var userRoles = await _user.GetRolesAsync(user);            
+            var userRoles = await _user.GetRolesAsync(user);
 
             var authClaims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, user.UserName!),
                 new Claim(ClaimTypes.Email, user.Email!),
-                new Claim("userId", user.Id!),
+                new Claim("userId", user.Id),
                 new Claim(
                     JwtRegisteredClaimNames.Jti,
                     Guid.NewGuid().ToString())
@@ -177,7 +194,6 @@ namespace APISolution.Controllers
             }
 
             var token = _token.GenerateAccessToken(authClaims);
-
             var refreshToken = _token.GenerateRefreshToken();
 
             user.RefreshToken = HashRefreshToken(refreshToken);
@@ -190,6 +206,13 @@ namespace APISolution.Controllers
 
             if (!updateResult.Succeeded)
             {
+                _logger.LogError(
+                    "Falha ao salvar o refresh token do usuário {UserId}: {Errors}",
+                    user.Id,
+                    string.Join(
+                        "; ",
+                        updateResult.Errors.Select(x => x.Description)));
+
                 return StatusCode(
                     StatusCodes.Status500InternalServerError,
                     "Não foi possível atualizar o usuário.");
@@ -208,12 +231,21 @@ namespace APISolution.Controllers
 
 
         [HttpPost("Cadastro")]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         public async Task<IActionResult> Register(RegisterModelDTO model)
         {
+            if (model is null ||
+                string.IsNullOrWhiteSpace(model.Username) ||
+                string.IsNullOrWhiteSpace(model.Email) ||
+                string.IsNullOrWhiteSpace(model.Password))                
+            {
+                return BadRequest("Usuário, email e senha são obrigatórios.");
+            }
+
             var userExist = await _userServices.GetAllUsers();
 
-            var norma = _userServices.NormalizeNome(model.Username!);
-            var email = _userServices.NormalizeNome(model.Email!);
+            var norma = _userServices.NormalizeNome(model.Username);
+            var email = _userServices.NormalizeNome(model.Email);
 
             var existe = userExist.Any(x =>
                 _userServices.NormalizeNome(x.UserName!) == norma);
@@ -221,12 +253,20 @@ namespace APISolution.Controllers
             var existeEmail = userExist.Any(x =>
                 _userServices.NormalizeNome(x.Email!) == email);
 
-            var existeCPF = userExist.Any(x =>
-                _userServices.NormalizeNome(x.CPF) == model.CPF);
+            var cpfInformado = !string.IsNullOrWhiteSpace(model.CPF);
+            var cpfNormalizado = NormalizarCpf(model.CPF);
+
+            if (cpfInformado && cpfNormalizado.Length != 11)
+            {
+                return BadRequest("CPF inválido.");
+            }
+
+            var existeCPF = cpfInformado && userExist.Any(usuario =>
+                NormalizarCpf(usuario.CPF) == cpfNormalizado);
 
             if (existe || existeEmail || existeCPF)
             {
-                return BadRequest("Usuario, Email ou CPF existente!");
+                return BadRequest("Não foi possível concluir o cadastro.");
             }
 
             var user = new Usuario
@@ -234,25 +274,46 @@ namespace APISolution.Controllers
                 Email = model.Email,
                 SecurityStamp = Guid.NewGuid().ToString(),
                 UserName = model.Username,
-                CPF = model.CPF,
+                CPF = cpfInformado ? cpfNormalizado : null,
                 PhoneNumber = model.PhoneNumber
             };
 
-            var result = await _user.CreateAsync(user, model.Password!);
+            IdentityResult result;
+
+            try
+            {
+                result = await _user.CreateAsync(user, model.Password);
+            }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogWarning(ex,
+                    "A criação do usuário falhou por conflito de unicidade.");
+
+                return BadRequest("Não foi possível concluir o cadastro com os dados informados.");
+            }
 
             if (!result.Succeeded)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError);
+                return BadRequest(result.Errors.Select(e => new
+                {
+                    e.Code,
+                    e.Description
+                }));
             }
 
             var roleResult = await _user.AddToRoleAsync(user, "User");
 
             if (!roleResult.Succeeded)
             {
-                // Evita deixar um usuário criado sem a role esperada
                 await _user.DeleteAsync(user);
 
-                return StatusCode(StatusCodes.Status500InternalServerError);
+                _logger.LogError(
+                    "Falha ao atribuir a role User ao novo usuário {UserId}: {Errors}",
+                    user.Id,
+                    string.Join("; ", roleResult.Errors.Select(e => e.Code)));
+
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    "Não foi possível concluir o cadastro.");
             }
 
             return Ok(result);
@@ -261,100 +322,148 @@ namespace APISolution.Controllers
 
 
         [HttpPost("RefreshToken")]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         public async Task<IActionResult> RefreshToken(TokenModelDTO model)
         {
-            if (model is null)
-            {
-                return BadRequest("Request de cliente inválido");
-            }
-
-            string? accessToken = model.AccessToken ?? throw new ArgumentNullException(nameof(model));
-
-            string? refreshToken = model.RefreshToken ?? throw new ArgumentNullException(nameof(model));
-
-            if (string.IsNullOrWhiteSpace(model.AccessToken) ||
+            if (model is null ||
+                string.IsNullOrWhiteSpace(model.AccessToken) ||
                 string.IsNullOrWhiteSpace(model.RefreshToken))
             {
                 return BadRequest("Access token e refresh token são obrigatórios.");
             }
 
+            ClaimsPrincipal? principal;
 
-            var principal = _token.GetPrincipalFromExpiredToken(accessToken!);
-
-            if (principal == null)
+            try
             {
-                return BadRequest("Access/Refresh Token inválido");
+                principal = _token.GetPrincipalFromExpiredToken(model.AccessToken);
             }
-
-            string username = principal.Identity?.Name;
-
-            if(string.IsNullOrEmpty(username))
-            {
-                return BadRequest("Token Inválido");
-            }
-
-            var user = await _user.FindByNameAsync(username!);
-
-            var refreshTokenHash = HashRefreshToken(refreshToken);
-
-            if (user == null ||
-                user.RefreshToken != refreshTokenHash ||
-                user.RefreshTokenExpiryTime < DateTime.UtcNow)
+            catch (Exception ex) when (
+                ex is Microsoft.IdentityModel.Tokens.SecurityTokenException ||
+                ex is ArgumentException)
             {
                 return BadRequest("Access/Refresh token inválido");
             }
 
-            var newAccessToken = _token.GenerateAccessToken(principal.Claims.ToList());
+            var userId = principal?.FindFirst("userId")?.Value;
 
+            if (string.IsNullOrEmpty(userId))
+            {
+                return BadRequest("Access/Refresh token inválido");
+            }
+
+            var user = await _user.FindByIdAsync(userId);
+
+            if (user is null ||
+                !user.Ativo ||
+                user.RefreshToken is null ||
+                await _user.IsLockedOutAsync(user))
+            {
+                return BadRequest("Access/Refresh token inválido");
+            }
+
+            var receivedHash = HashRefreshToken(model.RefreshToken);
+
+            var hashValido = CryptographicOperations.FixedTimeEquals(
+                Encoding.UTF8.GetBytes(user.RefreshToken),
+                Encoding.UTF8.GetBytes(receivedHash));
+
+            if (!hashValido || user.RefreshTokenExpiryTime < DateTime.UtcNow)
+            {
+                return BadRequest("Access/Refresh token inválido");
+            }
+
+            // Claims refeitas a partir do banco (roles atuais), igual ao Login
+            var userRoles = await _user.GetRolesAsync(user);
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, user.UserName!),
+                new Claim(ClaimTypes.Email, user.Email!),
+                new Claim("userId", user.Id),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
+
+            foreach (var role in userRoles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
+
+            var newAccessToken = _token.GenerateAccessToken(claims);
             var newRefreshToken = _token.GenerateRefreshToken();
 
             user.RefreshToken = HashRefreshToken(newRefreshToken);
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddHours(
+                _jwtOptions.RefreshTokenValidityInHours);
 
-            user.RefreshTokenExpiryTime =  DateTime.UtcNow.AddHours(
-                    _jwtOptions.RefreshTokenValidityInHours);
+            var updateResult = await _user.UpdateAsync(user);
 
-
-            await _user.UpdateAsync(user);
+            if (!updateResult.Succeeded)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    "Não foi possível renovar a sessão.");
+            }
 
             return Ok(new
             {
-                accessToken = new JwtSecurityTokenHandler().WriteToken(newAccessToken),
-                refreshToken = newRefreshToken
+                accessToken = new JwtSecurityTokenHandler().WriteToken(newAccessToken),refreshToken = newRefreshToken
             });
         }
 
- 
+
         [HttpPost("revoke/{username}")]
         [Authorize(Policy = "Super")]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]     
         public async Task<IActionResult> Revoke(string username)
         {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                return BadRequest("Nome de usuário é obrigatório.");
+            }
+
             var user = await _user.FindByNameAsync(username);
 
-            if (user == null) return BadRequest("Invalid user name");
+            if (user is null)
+            {
+                return BadRequest("Usuário não encontrado.");
+            }
 
             user.RefreshToken = null;
+            user.RefreshTokenExpiryTime = DateTime.MinValue;
 
-            await _user.UpdateAsync(user);
+            var result = await _user.UpdateAsync(user);
+
+            if (!result.Succeeded)
+            {
+                _logger.LogError(
+                    "Falha ao revogar o refresh token do usuário {UserId}: {Errors}",
+                    user.Id,
+                    string.Join("; ", result.Errors.Select(error => error.Description)));
+
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    "Não foi possível revogar a sessão.");
+            }
 
             return NoContent();
         }
 
 
-        [HttpGet("ShowUsers")]
-        [Authorize(Policy = "Super")]
-        public async Task<ActionResult<ICollection<Usuario>>> ShowUsers()
-        {
-            return Ok(await _user.Users.ToListAsync());
+        //[HttpGet("ShowUsers")]
+        //[Authorize(Policy = "Super")]
+        //public async Task<ActionResult<ICollection<Usuario>>> ShowUsers()
+        //{
+        //    return Ok(await _user.Users.ToListAsync());
 
-        }
+        //}
 
 
-        [HttpGet("ShowRoles")]
-        [Authorize(Policy = "Super")]
-        public async Task<ActionResult<ICollection<IdentityRole>>> ShowRoles()
-        {
-            return Ok(await _role.Roles.ToListAsync());        
-        }
+        //[HttpGet("ShowRoles")]
+        //[Authorize(Policy = "Super")]
+        //public async Task<ActionResult<ICollection<IdentityRole>>> ShowRoles()
+        //{
+        //    return Ok(await _role.Roles.ToListAsync());        
+        //}
 
     }
 }

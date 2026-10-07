@@ -9,7 +9,7 @@ namespace Infraestrutura.BancoContexto
 {
     public class UnitOfWork : IUnitOfWork
     {
-        private  ApiContext? _api;
+        private ApiContext _api;
         private IUsuariosRepository _usuarios;
         private IEventosRepository _eventos;
         private IInscricaoRepository _inscricao;
@@ -48,7 +48,7 @@ namespace Infraestrutura.BancoContexto
         {
             get
             {
-                return _inscricao = _inscricao ?? new InscricaoRepository(_api);
+                return _inscricao = _inscricao ??= new InscricaoRepository(_api);
             }
 
             set { _inscricao = value; }
@@ -58,7 +58,7 @@ namespace Infraestrutura.BancoContexto
         {
             get
             {
-                return _inscricaoApp = _inscricaoApp ?? new InscricaoAppRepository(_api);
+                return _inscricaoApp = _inscricaoApp ??= new InscricaoAppRepository(_api);
             }
 
             set { _inscricaoApp = value;  }
@@ -85,7 +85,7 @@ namespace Infraestrutura.BancoContexto
             }
             catch(Exception)
             {
-                throw new Exception("ERRO AO SALAVR NO BANCO - SaveChances");
+                throw new InvalidOperationException("Ocorreu um erro ao salvar");
             }
 
         }
@@ -98,7 +98,7 @@ namespace Infraestrutura.BancoContexto
             }
             catch(Exception)
             {
-                throw new Exception("Erro ao liberar dados do context");
+                throw new InvalidOperationException("Erro ao liberar dados do context");
             }
         }
     }

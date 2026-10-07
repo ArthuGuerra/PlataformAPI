@@ -21,6 +21,7 @@ namespace APISolution.Controllers
 
         [HttpGet("AllUsuarios")]
         [Authorize(Policy = "Super")]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         public async Task<ActionResult<ICollection<UsuarioPrintDTO>>> GetAll()
         {                                    
             return Ok(await _us.GetAllUsers());                              
@@ -29,6 +30,7 @@ namespace APISolution.Controllers
 
         [HttpGet("AllUsuariosAtivos")]
         [Authorize(Policy = "Super")]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         public async Task<ActionResult<ICollection<UsuarioPrintDTO>>> GetUsersAtivos()
         {
             return Ok(await _us.GetAtivos());
@@ -37,6 +39,7 @@ namespace APISolution.Controllers
 
         [HttpGet("UsuariosInscricoes")]
         [Authorize(Policy = "Super")]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         public async Task<ActionResult<ICollection<Usuario>>> UsuarioInscricoes()
         {                       
             return Ok(await _us.UsuarioInscricao());                       
@@ -45,6 +48,7 @@ namespace APISolution.Controllers
 
         [HttpGet("{id}")]
         [Authorize(Policy = "Super")]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         public async Task<IActionResult> GetId(string id)
         {
           
@@ -63,6 +67,7 @@ namespace APISolution.Controllers
 
         [HttpGet("Nome")]
         [Authorize(Policy = "Super")]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         public async Task<IActionResult> GetNome(string nome)
         {
            
@@ -82,6 +87,7 @@ namespace APISolution.Controllers
 
         [HttpPatch("Update")]
         [Authorize(Policy = "User")]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         public async Task<IActionResult> UpdateUser(string id, UsuarioPrintDTO dto)
         {
             
@@ -100,6 +106,7 @@ namespace APISolution.Controllers
 
         [HttpDelete("Delete")]
         [Authorize(Policy = "Super")]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         public async Task<IActionResult> DeleteUser(string id)
         {
             
@@ -118,9 +125,10 @@ namespace APISolution.Controllers
 
         [Authorize(Policy = "User")]
         [HttpPost("TrocarSenha")]
-        public async Task<IActionResult> ChangePass(string email, UsuarioSenhaDTO user)
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+        public async Task<IActionResult> ChangePass(ChangePassDTO dto)
         {
-            var aux = await _us.UpdateSenha(email, user);
+            var aux = await _us.UpdateSenha(dto);
 
             if (aux is true)
             {
@@ -135,6 +143,7 @@ namespace APISolution.Controllers
 
         [Authorize(Policy = "Super")]
         [HttpGet("ShowUsers&Roles")]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         public async Task<IActionResult> ShowUserRole()
         {
             return Ok(await _us.ShowUsersRoles());

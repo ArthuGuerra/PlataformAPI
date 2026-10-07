@@ -297,25 +297,25 @@ namespace ApiTest.UnitTestes.Usuarios
             // Arrange           
 
             string email = "emaildeteste@gmail.com";
-
-            var usuario = _fix.Build<UsuarioSenhaDTO>().Create();
+            
+            var mudarSenha = _fix.Build<ChangePassDTO>().Create();
 
             var services = new Mock<IUsuarioServices>();
 
 
-            services.Setup(r => r.UpdateSenha(email, usuario)).ReturnsAsync(true);
+            services.Setup(r => r.UpdateSenha(mudarSenha)).ReturnsAsync(true);
 
 
             var controller = new UsuarioController(services.Object);
 
 
             // Act
-            var result = await controller.ChangePass(email, usuario);
+            var result = await controller.ChangePass(mudarSenha);
 
 
             // Assert
 
-            services.Verify(r => r.UpdateSenha(email, usuario), Times.Once);
+            services.Verify(r => r.UpdateSenha(mudarSenha), Times.Once);
 
             Assert.NotNull(result);
 
